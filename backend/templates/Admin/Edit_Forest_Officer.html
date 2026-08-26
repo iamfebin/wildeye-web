@@ -1,0 +1,698 @@
+{% extends "Admin/admin_base.html" %}
+
+{% block title %}Edit Forest Officer - WildEye Admin{% endblock %}
+
+{% block styles %}
+{{ block.super }} {# Optional: In case admin_base.html has styles in its own block styles that should be inherited #}
+<style>
+    .error-message { color: red; font-size: 0.9em; display: block; margin-top: 2px;}
+    .success-message { color: green; font-size: 0.9em; display: block; margin-top: 2px;}
+    .checking-message { color: orange; font-size: 0.9em; display: block; margin-top: 2px;}
+
+    /* Styles for the form table and its elements */
+    .edit-officer-form-table {
+        /* width: 550px; */ /* Removed fixed width, let it be more flexible or use max-width */
+        max-width: 650px; /* Allow it to be wider for better spacing */
+        margin: 20px auto; /* Center the form table */
+        border-collapse: collapse;
+        background-color: #fff; /* Give form a background if main content is different */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1); /* Add some shadow for depth */
+        border-radius: 8px;
+        overflow: hidden; /* For border-radius on table */
+    }
+
+    .edit-officer-form-table td {
+        padding: 10px 15px; /* Adjusted padding */
+        vertical-align: top;
+        border-bottom: 1px solid #eee; /* Lighter borders */
+    }
+    .edit-officer-form-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .edit-officer-form-table td:first-child { /* Label column */
+        width: 200px; /* Adjusted width for labels */
+        font-weight: 600; /* Make labels bolder */
+        color: #333;
+        background-color: #f9f9fa; /* Slightly different background for label cells */
+    }
+
+    .edit-officer-form-table input[type="text"],
+    .edit-officer-form-table input[type="date"],
+    .edit-officer-form-table input[type="password"],
+    .edit-officer-form-table input[type="email"],
+    .edit-officer-form-table input[type="file"],
+    .edit-officer-form-table select,
+    .edit-officer-form-table textarea {
+        width: 100%;
+        padding: 8px 10px;
+        margin-bottom: 3px; /* Space for error message */
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 0.95em;
+    }
+    .edit-officer-form-table textarea { min-height: 80px; }
+
+    /* HTML5 validation styles for inputs within this form */
+    .edit-officer-form-table input:invalid,
+    .edit-officer-form-table select:invalid,
+    .edit-officer-form-table textarea:invalid {
+        border-color: #e53e3e !important; /* Original red for HTML5 invalid */
+        /* box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25); */ /* Optional: match admin_base shadow style */
+    }
+
+    /* JS-driven error border for inputs within this form */
+    .edit-officer-form-table input.error-border,
+    .edit-officer-form-table select.error-border,
+    .edit-officer-form-table textarea.error-border {
+        border-color: red !important; /* Original JS driven error */
+    }
+    /* JS-driven valid border (if needed, complement with admin_base styles) */
+    .edit-officer-form-table input.valid,
+    .edit-officer-form-table select.valid {
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+    }
+
+
+    .password-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+    .password-container input {
+        padding-right: 35px; /* Space for the toggle icon */
+        flex-grow: 1;
+        /* width: 100%; Ensure it fills container if not already by input styles above */
+    }
+    .password-container .toggle-password-visibility {
+        position: absolute;
+        right: 10px; /* Adjusted for padding inside input */
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        user-select: none;
+        font-size: 1.2em; /* Make icon a bit larger */
+        color: #777;
+    }
+    .icon-eye-open::before { content: "👁️"; } /* Unicode eye characters */
+    .icon-eye-closed::before { content: "🙈"; }
+
+    .current-image-preview {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+        vertical-align: middle;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+    }
+    .form-submit-button {
+        padding: 10px 20px;
+        font-size: 1em;
+        background-color: #007bff; /* Bootstrap primary blue or theme color */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    .form-submit-button:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+    }
+
+    /* Responsive adjustments for the form table */
+    @media (max-width: 768px) {
+        .edit-officer-form-table td:first-child {
+            width: 150px; /* Adjust if needed for smaller screens */
+        }
+    }
+    @media (max-width: 600px) {
+        .edit-officer-form-table,
+        .edit-officer-form-table tr,
+        .edit-officer-form-table td {
+            display: block;
+            width: 100% !important; /* Important to override inline widths or previous rules */
+            box-sizing: border-box;
+        }
+        .edit-officer-form-table td {
+            border-bottom: none; /* Remove internal td borders */
+            padding-left: 0; padding-right: 0;
+        }
+        .edit-officer-form-table tr {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee; /* Separator for rows in stacked view */
+        }
+        .edit-officer-form-table tr:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .edit-officer-form-table td:first-child {
+            background-color: transparent;
+            font-weight: bold; /* Keep labels bold */
+            padding-bottom: 5px; /* Space between label and input */
+        }
+        .password-container input {
+            width: calc(100% - 35px); /* Adjust if needed */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{# The H1 for the page title is now handled by the {% block title %} in admin_base.html's top-bar #}
+{# If you want a heading specific to this content area, add it here: #}
+{# <h2 class="mb-4">Officer Details</h2> #}
+
+<form id="form1" name="form1" method="post" action="{% url 'admin_edit_forest_officer' officer.id %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  <input type="hidden" id="officerId" value="{{ officer.id }}">
+  <input type="hidden" id="loginId" value="{{ officer.LOGIN.id }}">
+
+  <table class="edit-officer-form-table"> <!-- Removed inline styles, using class -->
+    <tr>
+      <td>First Name <span style="color:red;">*</span></td>
+      <td>
+        <input type="text" name="first_name" id="firstNameInput" value="{{ officer.first_name }}" pattern="^[A-Z][a-zA-Z\s]*$" required title="Must start with a capital letter and contain only letters/spaces."/>
+        <span id="firstNameError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Last Name <span style="color:red;">*</span></td>
+      <td>
+        <input type="text" name="last_name" id="lastNameInput" value="{{ officer.last_name }}" pattern="^[A-Z][a-zA-Z\s]*$" required title="Must start with a capital letter and contain only letters/spaces."/>
+        <span id="lastNameError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Image</td>
+      <td>
+          {% if officer.image %}
+            <p style="margin-top:0; margin-bottom: 5px;">Current Image: <br><img src="{{ officer.image.url }}" alt="{{ officer.first_name }} {{ officer.last_name }}" class="current-image-preview"/></p>
+          {% else %}
+            <p style="margin-top:0; margin-bottom: 5px;">No image uploaded.</p>
+          {% endif %}
+          Upload New Image: <input type="file" name="image_file" id="imageFile" accept="image/*" />
+          <small style="display:block; margin-top: 2px;">(Optional: leave blank to keep current image)</small>
+      </td>
+    </tr>
+    <tr>
+      <td>DOB <span style="color:red;">*</span></td>
+      <td>
+          <input name="dob" type="date" id="dobInput" value="{{ officer.dob|date:'Y-m-d' }}" required />
+          <span id="dobError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Address <span style="color:red;">*</span></td>
+      <td>
+        <textarea name="address" required>{{ officer.address }}</textarea>
+      </td>
+    </tr>
+    <tr>
+      <td>Station <span style="color:red;">*</span></td>
+      <td>
+        <select name="station" id="stationSelect" required>
+            <option value="">-- Select Station --</option>
+            {% for station_item in stations %}
+              <option value="{{ station_item.id }}" {% if officer.STATION and station_item.id == officer.STATION.id %}selected{% endif %}>
+                {{ station_item.name }} ({{ station_item.place }})
+              </option>
+            {% endfor %}
+        </select>
+        <span id="stationError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Ph. No. <span style="color:red;">*</span></td>
+      <td>
+        <input type="text" name="phone" id="phoneInput" value="{{ officer.phone }}" required pattern="[6789]\d{9}"
+               title="Phone number must start with 6-9 and be 10 digits long."/>
+        <span id="phoneError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Email <span style="color:red;">*</span></td>
+      <td>
+        <input type="email" name="email" id="emailInput" value="{{ officer.email }}" required
+               title="Enter a valid email (e.g., user@example.com)"/>
+        <span id="emailError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Username <span style="color:red;">*</span></td>
+      <td>
+        <input type="text" name="username" id="usernameInput" value="{{ officer.LOGIN.username }}" required minlength="3" title="Username must be at least 3 characters." />
+        <span id="usernameError" class="error-message"></span>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>New Password</td>
+      <td>
+        <div class="password-container">
+            <input type="password" name="password_new" id="passwordNewInput" placeholder="Enter new password" pattern="(?=.*\d)(?=.*[\W_]).{8,}" title="Optional. If changing: 8+ chars, 1 number, 1 special symbol." />
+            <span class="toggle-password-visibility icon-eye-open" id="toggleNewPassword" title="Show/Hide password"></span>
+        </div>
+        <span id="passwordNewError" class="error-message"></span>
+      </td>
+    </tr>
+    <tr>
+      <td>Confirm New Password</td>
+      <td>
+        <div class="password-container">
+            <input type="password" name="password_confirm" id="passwordConfirmInput" placeholder="Confirm new password"/>
+            <span class="toggle-password-visibility icon-eye-open" id="toggleConfirmPassword" title="Show/Hide password"></span>
+        </div>
+        <span id="passwordConfirmError" class="error-message"></span>
+        <p style="margin-top:2px; margin-bottom:0;"><small>Leave 'New Password' fields blank to keep current password.</small></p>
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2" style="text-align: center; padding-top: 20px; padding-bottom: 10px; background-color: #f9f9fa;">
+          <input type="submit" name="Submit" value="Update Officer" class="form-submit-button" />
+      </td>
+    </tr>
+  </table>
+</form>
+
+{{ stations_with_other_officers_ids_js|json_script:"stations-with-other-officers-data-inner" }}
+
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const myForm = document.getElementById('form1');
+    if (!myForm) {
+        console.error("CRITICAL: Form with id 'form1' not found. Script will not run.");
+        return;
+    }
+    const officerId = document.getElementById('officerId').value;
+    const loginId = document.getElementById('loginId').value;
+
+    // DOM Element Getters
+    const firstNameInput = document.getElementById('firstNameInput');
+    const lastNameInput = document.getElementById('lastNameInput');
+    const dobInput = document.getElementById('dobInput');
+    const emailInput = document.getElementById('emailInput');
+    const phoneInput = document.getElementById('phoneInput');
+    const stationSelect = document.getElementById('stationSelect');
+    const usernameInput = document.getElementById('usernameInput');
+
+    const passwordNewInput = document.getElementById('passwordNewInput');
+    const toggleNewPassword = document.getElementById('toggleNewPassword');
+    const passwordConfirmInput = document.getElementById('passwordConfirmInput');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+
+    // Error Span Getters
+    const firstNameError = document.getElementById('firstNameError');
+    const lastNameError = document.getElementById('lastNameError');
+    const dobError = document.getElementById('dobError');
+    const emailError = document.getElementById('emailError');
+    const phoneError = document.getElementById('phoneError');
+    const stationError = document.getElementById('stationError');
+    const usernameError = document.getElementById('usernameError');
+    const passwordNewError = document.getElementById('passwordNewError');
+    const passwordConfirmError = document.getElementById('passwordConfirmError');
+
+    // --- Station Data from Django ---
+    const stationsDataElement = document.getElementById('stations-with-other-officers-data-inner');
+    let stationsWithOtherOfficersData = [];
+    if (stationsDataElement && stationsDataElement.textContent) {
+        try { stationsWithOtherOfficersData = JSON.parse(stationsDataElement.textContent); }
+        catch (e) { console.error("Error parsing station data:", e); if(stationError) stationError.textContent = "Error loading station data.";}
+    } else {
+        console.warn("Station data element not found or empty ('stations-with-other-officers-data-inner').");
+    }
+
+    // --- Validation Flags ---
+    let isFirstNameValid = true, isLastNameValid = true, isAgeValid = true, isStationValid = true,
+        isEmailValid = true, // Combined pattern and availability for email
+        isPhoneValid = true, // Combined pattern and availability for phone
+        isUsernameValid = true, // Combined pattern and availability for username
+        isPasswordNewValid = true, isPasswordConfirmValid = true;
+
+    // --- Debounce Timers (objects to pass by reference for clearTimeout) ---
+    const emailDebounceRef = {}, phoneDebounceRef = {}, usernameDebounceRef = {};
+
+    function applyErrorStyle(element, isValid) {
+        if (!element) return;
+        if (isValid) {
+            element.classList.remove('error-border');
+            element.classList.add('valid'); // For potential general valid styling
+        } else {
+            element.classList.add('error-border');
+            element.classList.remove('valid');
+        }
+    }
+
+    // --- Toggle Password Visibility Function ---
+    function setupPasswordToggle(toggleElement, passwordInputElement) {
+        if (toggleElement && passwordInputElement) {
+            toggleElement.addEventListener('click', function () {
+                const type = passwordInputElement.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInputElement.setAttribute('type', type);
+                this.classList.toggle('icon-eye-open');
+                this.classList.toggle('icon-eye-closed');
+                this.title = type === 'password' ? (passwordInputElement.id === 'currentPasswordDisplayField' ? 'Show current password' : 'Show password')
+                                                 : (passwordInputElement.id === 'currentPasswordDisplayField' ? 'Hide current password' : 'Hide password');
+            });
+        }
+    }
+    setupPasswordToggle(toggleNewPassword, passwordNewInput);
+    setupPasswordToggle(toggleConfirmPassword, passwordConfirmInput);
+
+    // --- Generic AJAX Checker ---
+    function createAjaxChecker(inputElement, errorElement, urlEndpoint, paramNameForValue, idToExclude, paramNameForId, successMessage, takenMessage, overallValidityFlagSetter, debounceTimerRef) {
+        return function() {
+            if(!inputElement || !errorElement) { console.warn("AJAX Checker: Input or Error element missing for", paramNameForValue); return; }
+            if (typeof debounceTimerRef.timer !== 'undefined') clearTimeout(debounceTimerRef.timer);
+
+            const value = inputElement.value.trim();
+            const originalValue = inputElement.defaultValue; // Original value from HTML value attribute
+
+            // 1. Check HTML5 basic validity first (required, pattern, minlength, type)
+            if (!inputElement.checkValidity()) {
+                if (inputElement.validity.valueMissing) errorElement.textContent = 'This field is required.';
+                else if (inputElement.validity.patternMismatch) errorElement.textContent = inputElement.title || 'Invalid format.';
+                else if (inputElement.validity.tooShort) errorElement.textContent = `Must be at least ${inputElement.minLength} characters.`;
+                else if (inputElement.validity.typeMismatch && inputElement.type === 'email') errorElement.textContent = 'Please enter a valid email address.';
+                else errorElement.textContent = 'Invalid input.';
+                applyErrorStyle(inputElement, false); errorElement.className = 'error-message';
+                overallValidityFlagSetter(false);
+                return;
+            }
+
+            // 2. If value hasn't changed from original, consider it valid (for unique fields in edit mode)
+            if (value.toLowerCase() === originalValue.toLowerCase() && (paramNameForValue === 'email' || paramNameForValue === 'phone' || paramNameForValue === 'username')) {
+                 errorElement.textContent = ''; errorElement.className = '';
+                 applyErrorStyle(inputElement, true);
+                 overallValidityFlagSetter(true);
+                 return;
+            }
+
+            // 3. Proceed to AJAX check for availability
+            errorElement.textContent = 'Checking...'; errorElement.className = 'checking-message';
+            // applyErrorStyle(inputElement, true); // Border will be handled by :invalid or success/failure of AJAX
+
+            debounceTimerRef.timer = setTimeout(function() {
+                const fetchUrl = `${urlEndpoint}?${paramNameForValue}=${encodeURIComponent(value)}&${paramNameForId}=${idToExclude}`;
+                fetch(fetchUrl)
+                    .then(response => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
+                    .then(data => {
+                        if (data.is_taken) {
+                            errorElement.textContent = takenMessage; applyErrorStyle(inputElement, false); errorElement.className = 'error-message';
+                            overallValidityFlagSetter(false);
+                        } else {
+                            errorElement.textContent = successMessage; applyErrorStyle(inputElement, true); errorElement.className = 'success-message';
+                            overallValidityFlagSetter(true);
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`Error checking ${paramNameForValue}:`, error);
+                        errorElement.textContent = `Error checking. Try again.`; applyErrorStyle(inputElement, false); errorElement.className = 'error-message';
+                        overallValidityFlagSetter(false);
+                    });
+            }, 700);
+        };
+    }
+
+    // --- Name Validations (First, Last) ---
+    function validateName(inputEl, errorEl, flagSetter) {
+        if(!inputEl || !errorEl) return;
+        let isValid = inputEl.checkValidity(); // Uses HTML5 pattern
+        if (isValid && inputEl.value.length > 0 && inputEl.value[0] !== inputEl.value[0].toUpperCase()) {
+             errorEl.textContent = 'Must start with a capital letter.'; isValid = false;
+        } else if (!isValid) {
+            if(inputEl.validity.valueMissing) errorEl.textContent = 'Required.';
+            else if(inputEl.validity.patternMismatch) errorEl.textContent = inputEl.title || 'Invalid characters.';
+            else errorEl.textContent = 'Invalid input.';
+        } else { errorEl.textContent = ''; }
+        flagSetter(isValid); applyErrorStyle(inputEl, isValid);
+    }
+    if(firstNameInput && firstNameError) {
+        firstNameInput.addEventListener('input', () => validateName(firstNameInput, firstNameError, (v) => isFirstNameValid = v));
+        firstNameInput.addEventListener('blur', () => validateName(firstNameInput, firstNameError, (v) => isFirstNameValid = v)); // Validate on blur too
+        validateName(firstNameInput, firstNameError, (v) => isFirstNameValid = v); // Initial check
+    }
+    if(lastNameInput && lastNameError) {
+        lastNameInput.addEventListener('input', () => validateName(lastNameInput, lastNameError, (v) => isLastNameValid = v));
+        lastNameInput.addEventListener('blur', () => validateName(lastNameInput, lastNameError, (v) => isLastNameValid = v));
+        validateName(lastNameInput, lastNameError, (v) => isLastNameValid = v); // Initial check
+    }
+
+    // --- Age Validation ---
+    function validateAge() {
+        if(!dobInput || !dobError) return;
+        const dobValue = dobInput.value;
+
+        if (!dobInput.checkValidity() || !dobValue) {
+             dobError.textContent = 'Date of Birth is required.';
+             applyErrorStyle(dobInput, false);
+             isAgeValid = false;
+             return;
+        }
+
+        const dobDate = new Date(dobValue);
+        const today = new Date();
+        today.setHours(0,0,0,0); // Normalize today's date to midnight for accurate comparison
+
+        if (isNaN(dobDate.getTime())) {
+            dobError.textContent = 'Invalid date selected. Please pick a valid date.';
+            applyErrorStyle(dobInput, false);
+            isAgeValid = false;
+            return;
+        }
+
+        if (dobDate > today) {
+            dobError.textContent = 'Date of Birth cannot be in the future.';
+            applyErrorStyle(dobInput, false);
+            isAgeValid = false;
+            return;
+        }
+
+        let age = today.getFullYear() - dobDate.getFullYear();
+        const monthDifference = today.getMonth() - dobDate.getMonth();
+        const dayDifference = today.getDate() - dobDate.getDate();
+
+        if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
+            age--;
+        }
+
+        if (age < 18) {
+            dobError.textContent = 'Officer must be at least 18 years old.';
+            applyErrorStyle(dobInput, false);
+            isAgeValid = false;
+        } else if (age > 60) {
+            dobError.textContent = 'Officer cannot be older than 60 years.';
+            applyErrorStyle(dobInput, false);
+            isAgeValid = false;
+        } else {
+            dobError.textContent = '';
+            applyErrorStyle(dobInput, true);
+            isAgeValid = true;
+        }
+    }
+    if(dobInput && dobError) {
+        dobInput.addEventListener('change', validateAge);
+        dobInput.addEventListener('blur', validateAge);
+        validateAge();
+    }
+
+    // --- Username Validation ---
+    if(usernameInput && usernameError) {
+        const performUsernameCheck = createAjaxChecker(usernameInput, usernameError, '/check_username_exists/', 'username', loginId, 'login_id', 'Username available!', 'Username taken.', (v) => isUsernameValid=v, usernameDebounceRef);
+        usernameInput.addEventListener('input', performUsernameCheck);
+        usernameInput.addEventListener('blur', performUsernameCheck);
+        performUsernameCheck();
+    }
+
+    // --- Email Validation ---
+    if(emailInput && emailError) {
+        const performEmailCheck = createAjaxChecker(emailInput, emailError, '/check_email_exists/', 'email', officerId, 'officer_id', 'Email available!', 'Email taken by another.', (v) => isEmailValid=v, emailDebounceRef);
+        emailInput.addEventListener('input', performEmailCheck);
+        emailInput.addEventListener('blur', performEmailCheck);
+        performEmailCheck();
+    }
+
+    // --- Phone Validation ---
+    if(phoneInput && phoneError) {
+        const performPhoneCheck = createAjaxChecker(phoneInput, phoneError, '/check_phone_exists/', 'phone', officerId, 'officer_id', 'Phone available!', 'Phone taken by another.', (v) => isPhoneValid=v, phoneDebounceRef);
+        phoneInput.addEventListener('input', performPhoneCheck);
+        phoneInput.addEventListener('blur', performPhoneCheck);
+        performPhoneCheck();
+    }
+
+    // --- Station Validation ---
+    function validateStation() {
+        if(!stationSelect || !stationError) return;
+        const selectedIdNum = parseInt(stationSelect.value);
+        let isValid = stationSelect.checkValidity(); // Handles required
+        if (!isValid) {
+            stationError.textContent = 'Please select a station.';
+        } else if (stationsWithOtherOfficersData.includes(selectedIdNum)) {
+            stationError.textContent = 'This station is already assigned to another officer.'; isValid = false;
+        } else { stationError.textContent = ''; }
+        isStationValid = isValid; applyErrorStyle(stationSelect, isValid);
+    }
+    if(stationSelect && stationError) {
+        stationSelect.addEventListener('change', validateStation);
+        validateStation();
+    }
+
+    // --- New Password Validation ---
+    function validateNewPasswords() {
+        if(!passwordNewInput || !passwordConfirmInput || !passwordNewError || !passwordConfirmError) return;
+        const newPass = passwordNewInput.value; const confirmPass = passwordConfirmInput.value;
+        let newPassFieldValid = true; let confirmPassFieldValid = true;
+
+        if (newPass !== "" && !passwordNewInput.checkValidity()) {
+            passwordNewError.textContent = passwordNewInput.title || "Password format incorrect (min 8, num, special).";
+            newPassFieldValid = false;
+        } else { passwordNewError.textContent = ""; }
+        isPasswordNewValid = newPassFieldValid;
+        applyErrorStyle(passwordNewInput, newPassFieldValid);
+
+        if (newPass !== "" && newPass !== confirmPass) {
+            passwordConfirmError.textContent = "Passwords do not match.";
+            confirmPassFieldValid = false;
+        } else if (newPass === "" && confirmPass !== "") {
+            passwordConfirmError.textContent = "Enter new password first, or leave both blank.";
+            confirmPassFieldValid = false;
+        } else if (newPass !== "" && confirmPass === "") { // If new pass is entered, confirm pass becomes required effectively
+             passwordConfirmError.textContent = "Please confirm your new password.";
+             confirmPassFieldValid = false;
+        }
+        else { passwordConfirmError.textContent = ""; }
+        isPasswordConfirmValid = confirmPassFieldValid;
+        applyErrorStyle(passwordConfirmInput, confirmPassFieldValid);
+    }
+    if(passwordNewInput && passwordConfirmInput) {
+        passwordNewInput.addEventListener('input', validateNewPasswords);
+        passwordConfirmInput.addEventListener('input', validateNewPasswords);
+        validateNewPasswords();
+    }
+
+    // --- Form Submission ---
+    myForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        console.log("--- SUBMIT ATTEMPT: Re-validating all fields ---");
+
+        // Trigger all synchronous validations
+        if(firstNameInput) validateName(firstNameInput, firstNameError, (v) => isFirstNameValid = v);
+        if(lastNameInput) validateName(lastNameInput, lastNameError, (v) => isLastNameValid = v);
+        if(dobInput) validateAge();
+        if(stationSelect) validateStation();
+        if(passwordNewInput && passwordConfirmInput) validateNewPasswords();
+
+        // Trigger AJAX validations (they will use their debounced logic if called rapidly)
+        // We need their flags to be updated.
+        let ajaxChecksPending = 0;
+        const onAjaxComplete = () => {
+            ajaxChecksPending--;
+            if (ajaxChecksPending === 0) {
+                finalizeSubmission();
+            }
+        };
+
+        const fieldsToAjaxCheck = [
+            { input: usernameInput, error: usernameError, url: '/check_username_exists/', param: 'username', id: loginId, idParam: 'login_id', msgOk: 'Username available!', msgTaken: 'Username taken.', flagSetter: (v) => isUsernameValid = v, debounceRef: usernameDebounceRef },
+            { input: emailInput, error: emailError, url: '/check_email_exists/', param: 'email', id: officerId, idParam: 'officer_id', msgOk: 'Email available!', msgTaken: 'Email taken by another.', flagSetter: (v) => isEmailValid = v, debounceRef: emailDebounceRef },
+            { input: phoneInput, error: phoneError, url: '/check_phone_exists/', param: 'phone', id: officerId, idParam: 'officer_id', msgOk: 'Phone available!', msgTaken: 'Phone taken by another.', flagSetter: (v) => isPhoneValid = v, debounceRef: phoneDebounceRef }
+        ];
+
+        let needsAjaxRecheck = false;
+        fieldsToAjaxCheck.forEach(check => {
+            if (check.input && check.input.value.trim() !== check.input.defaultValue.trim()) { // Only re-check if value changed
+                if (check.input.checkValidity()) { // And basic HTML5 validation passes
+                    needsAjaxRecheck = true;
+                    ajaxChecksPending++;
+                    // Call the checker, but adapt it to use the onAjaxComplete callback
+                    const checker = createAjaxChecker(check.input, check.error, check.url, check.param, check.id, check.idParam, check.msgOk, check.msgTaken, (v) => {
+                        check.flagSetter(v);
+                        onAjaxComplete(); // Call completion callback
+                    }, check.debounceRef);
+                    checker();
+                }
+            }
+        });
+
+        if (!needsAjaxRecheck) { // If no AJAX fields needed re-checking
+            finalizeSubmission();
+        }
+    });
+
+    function finalizeSubmission() {
+        const currentNativeValidity = myForm.checkValidity();
+        console.log("--- INSIDE finalizeSubmission for SUBMIT ---");
+        console.log("FLAGS:", {
+            isFirstNameValid, isLastNameValid, isAgeValid, isStationValid,
+            isEmailValid, isPhoneValid, isUsernameValid,
+            isPasswordNewValid, isPasswordConfirmValid,
+            "NativeFormValid": currentNativeValidity
+        });
+
+        const allCustomClientValidationsPass = isFirstNameValid && isLastNameValid && isAgeValid && isStationValid &&
+                                 isEmailValid && isPhoneValid && isUsernameValid &&
+                                 isPasswordNewValid && isPasswordConfirmValid;
+
+        if (allCustomClientValidationsPass && currentNativeValidity) {
+            console.log("Client validation PASSED. Submitting form programmatically...");
+            let stillChecking = false;
+            document.querySelectorAll('.checking-message').forEach(el => {
+                if (el.textContent.includes('Checking...')) {
+                    stillChecking = true;
+                }
+            });
+            if (stillChecking) {
+                console.warn("Submission blocked: One or more fields are still being checked via AJAX.");
+                alert("Please wait for all field checks to complete before submitting.");
+                return;
+            }
+            myForm.submit();
+        } else {
+            console.error("Client validation FAILED. Form submission PREVENTED.");
+            if (!allCustomClientValidationsPass) {
+                console.warn("Custom JS validation flags failed. See individual flags above.");
+            }
+            if (!currentNativeValidity) {
+                console.warn("Native HTML5 validation (myForm.checkValidity()) failed. Browser should highlight issues.");
+            }
+
+            // Focus on the first field with an error
+            const errorOrder = [
+                {valid: isFirstNameValid, el: firstNameInput}, {valid: isLastNameValid, el: lastNameInput},
+                {valid: isAgeValid, el: dobInput},
+                {valid: isUsernameValid, el: usernameInput}, {valid: isEmailValid, el: emailInput},
+                {valid: isPhoneValid, el: phoneInput}, {valid: isStationValid, el: stationSelect},
+                {valid: isPasswordNewValid, el: (passwordNewInput && passwordNewInput.value ? passwordNewInput : null)},
+                {valid: isPasswordConfirmValid, el: (passwordConfirmInput && passwordConfirmInput.value ? passwordConfirmInput : null)}
+            ];
+
+            for (let item of errorOrder) {
+                if (!item.valid && item.el) {
+                    item.el.focus();
+                    break;
+                }
+            }
+            // Fallback if custom flags are ok, but native HTML5 validation fails
+            if(allCustomClientValidationsPass && !currentNativeValidity){
+                const firstInvalidElement = myForm.querySelector(':invalid');
+                if (firstInvalidElement) {
+                    firstInvalidElement.focus();
+                }
+                myForm.reportValidity(); // Trigger browser's native validation UI
+            }
+            alert("Please correct the errors before submitting.");
+        }
+    }
+});
+</script>
+{% endblock %}

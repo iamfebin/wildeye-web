@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-859-1" />
+<title>Admin Edit Camera</title> {# Changed Title #}
+</head>
+
+<body>
+<h1>Edit Camera</h1> {# Added Heading #}
+
+{# Form action submits to the same URL with the camera ID #}
+<form action="" method="post" name="form1" id="form1"> {# Removed enctype as no file upload #}
+  {% csrf_token %}
+  <table width="400" border="1"> {# Adjusted width #}
+    <tr>
+      <td width="150">Camera No. </td> {# Adjusted width #}
+      <td><label>
+        {# Pre-fill the camera_id field #}
+        <input type="text" name="camera_no" value="{{ camera.camera_id }}" required /> {# Added required #}
+      </label></td>
+    </tr>
+    <tr>
+      <td>Latitude</td>
+      <td><label>
+        {# Pre-fill the latitude field #}
+        <input type="text" name="latitude" value="{{ camera.latitude }}" required /> {# Added required #}
+      </label></td>
+    </tr>
+    <tr>
+      <td><p>Longitude</p></td>
+      <td>
+          {# Pre-fill the longitude field #}
+          <input type="text" name="longitude" value="{{ camera.longitude }}" required /> {# Added required #}
+      </td>
+    </tr>
+    <tr>
+      <td colspan="2"><label>
+        <div align="center">
+          <input type="submit" name="Submit" value="Update" /> {# Changed button text #}
+        </div>
+      </label></td>
+    </tr>
+  </table>
+  <label></label>
+</form>
+</body>
+</html>

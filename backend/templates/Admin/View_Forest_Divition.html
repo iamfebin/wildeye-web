@@ -1,0 +1,382 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Forest Divisions Dashboard{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Enhanced Page-specific styles */
+    #page-content-wrapper {
+        padding: 25px 30px; /* Increased padding */
+        background-color: #f4f7f6; /* Slightly off-white background for content area */
+    }
+
+    /* Header section for title and hamburger (if shown) */
+    /* #top-bar is from base.html, we'll just style its content here */
+    #top-bar h1 {
+        font-size: 2em; /* Larger title */
+        font-weight: 700; /* Bolder title */
+        color: #2c3e50; /* Darker, more professional blue-gray */
+    }
+
+    .page-header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px; /* More space below header actions */
+        padding-bottom: 20px;
+        border-bottom: 1px solid #dde2e7;
+        flex-wrap: wrap; /* Allow wrapping for smaller screens */
+        gap: 15px; /* Space between items when they wrap */
+    }
+
+    .page-header-actions .title-info h2 {
+        margin: 0;
+        font-size: 1.6em;
+        font-weight: 600;
+        color: #34495e; /* Another shade of dark blue-gray */
+    }
+    .page-header-actions .title-info .item-count {
+        font-size: 0.9em;
+        color: #7f8c8d;
+        margin-top: 4px;
+        display: block;
+    }
+
+
+    .actions-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 15px; /* Spacing between search and add button */
+        flex-wrap: wrap; /* Allow controls to wrap */
+    }
+
+    .btn-primary-action {
+        background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 12px 25px; /* Larger padding */
+        text-decoration: none;
+        border-radius: 25px; /* Pill shape */
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+    .btn-primary-action i {
+        margin-right: 10px; /* More space for icon */
+        font-size: 1.1em;
+    }
+    .btn-primary-action:hover, .btn-primary-action:focus {
+        background-image: linear-gradient(to right, #0056b3 0%, #003f80 100%);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border-radius: 25px; /* Pill shape for search */
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 4px; /* Padding inside the search box wrapper */
+        min-width: 300px; /* Minimum width for search */
+    }
+    .search-box input[type="text"] {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px 0 0 20px; /* Rounded on the left */
+        font-size: 1em;
+        flex-grow: 1;
+        outline: none;
+        color: #333;
+    }
+    .search-box input[type="text"]::placeholder {
+        color: #95a5a6;
+    }
+    .search-box button[type="submit"] {
+        background-color: #28a745; /* Green for search */
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 0 20px 20px 0; /* Rounded on the right */
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    .search-box button[type="submit"] i {
+        margin-right: 8px;
+    }
+    .search-box button[type="submit"]:hover {
+        background-color: #218838;
+    }
+
+    .data-table-container {
+        background-color: #ffffff;
+        border-radius: 12px; /* More rounded corners */
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07); /* Softer, more spread shadow */
+        overflow: hidden; /* Important for rounded corners on table */
+    }
+
+    .responsive-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .responsive-table thead th {
+        background-color: #e9edf2; /* Lighter, cooler header background */
+        color: #34495e; /* Dark blue-gray text */
+        font-weight: 600;
+        text-transform: uppercase; /* Uppercase headers */
+        letter-spacing: 0.5px;
+        padding: 18px 20px; /* More padding in headers */
+        text-align: center;
+        border-bottom: 2px solid #d1d8e0;
+    }
+    .responsive-table tbody tr {
+        border-bottom: 1px solid #ecf0f1; /* Lighter row separator */
+        transition: background-color 0.2s ease-in-out;
+    }
+    .responsive-table tbody tr:last-child {
+        border-bottom: none;
+    }
+    .responsive-table tbody tr:hover {
+        background-color: #f8f9fa; /* Subtle hover */
+    }
+    .responsive-table tbody td {
+        padding: 16px 20px; /* Consistent padding */
+        color: #555;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .responsive-table tbody td.text-left-align {
+        text-align: left;
+    }
+
+    .action-button {
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 20px; /* Pill shape for action buttons */
+        margin: 0 5px;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.25s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        min-width: 90px; /* Ensure buttons have a decent minimum width */
+        justify-content: center;
+    }
+    .action-button i {
+        margin-right: 7px;
+        font-size: 0.95em;
+    }
+    .action-button.edit {
+        background-color: #ffc107; color: #333; border-color: #e0a800;
+    }
+    .action-button.edit:hover {
+        background-color: #e0a800; transform: scale(1.05); box-shadow: 0 2px 8px rgba(224, 168, 0, 0.3);
+    }
+    .action-button.delete {
+        background-color: #dc3545; color: white; border-color: #c82333;
+    }
+    .action-button.delete:hover {
+        background-color: #c82333; transform: scale(1.05); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: #fff; /* Consistent with table background if used standalone */
+    }
+    .empty-state i {
+        font-size: 4em;
+        color: #bdc3c7; /* Light grey icon */
+        margin-bottom: 20px;
+    }
+    .empty-state p {
+        font-size: 1.2em;
+        color: #7f8c8d; /* Muted text */
+        margin-bottom: 5px;
+    }
+    .empty-state .search-query-display {
+        font-style: italic;
+        color: #95a5a6;
+    }
+
+    /* Responsive adjustments for the table content */
+    @media (max-width: 768px) {
+        #top-bar h1 { font-size: 1.6em; } /* Adjust title size */
+        .page-header-actions .title-info h2 { font-size: 1.3em; }
+
+        .actions-toolbar { justify-content: center; }
+        .search-box { min-width: unset; width: 100%; margin-top: 10px; }
+        .btn-primary-action { width: 100%; justify-content: center; }
+
+        .responsive-table thead { display: none; }
+        .responsive-table tr {
+            display: block;
+            margin-bottom: 20px;
+            border: 1px solid #dde2e7;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background-color: #fff;
+        }
+        .responsive-table td {
+            display: block;
+            text-align: right;
+            padding-left: 50%; /* Make space for the label */
+            position: relative;
+            border-bottom: 1px dashed #ecf0f1; /* Dashed separator for stacked cells */
+        }
+        .responsive-table td:last-child { border-bottom: none; }
+        .responsive-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 15px;
+            width: calc(50% - 30px);
+            padding-right: 10px;
+            white-space: nowrap;
+            font-weight: 600; /* Bolder labels */
+            text-align: left;
+            color: #34495e; /* Darker label color */
+            font-size: 0.9em;
+        }
+        .responsive-table td.actions-cell { text-align: center !important; padding: 15px; }
+        .responsive-table td.actions-cell::before { display: none; }
+        .action-button { margin: 5px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="page-header-actions">
+        <div class="title-info">
+            <h2>Forest Divisions Management</h2>
+            <span class="item-count">
+                {% if divisions %}
+                    {{ divisions|length }} Division{{ divisions|length|pluralize }}
+                {% else %}
+                    0 Divisions
+                {% endif %}
+            </span>
+        </div>
+        <div class="actions-toolbar">
+             <form id="searchForm" name="searchForm" method="post" action="" class="search-box">
+                {% csrf_token %}
+                <input type="text" name="textfield" placeholder="Search by Division Name..." value="{{ request.POST.textfield }}" aria-label="Search Forest Divisions" />
+                <button type="submit" name="Submit" value="Search">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            <a href="/admin_add_forest_divition/" class="btn-primary-action">
+                <i class="fas fa-plus-circle"></i> Add New Division
+            </a>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if divisions %}
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Name</th>
+                        <th>Place</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for division in divisions %}
+                    <tr>
+                        <td data-label="S.No">{{ forloop.counter }}</td>
+                        <td data-label="Name" class="text-left-align">{{ division.name }}</td>
+                        <td data-label="Place" class="text-left-align">{{ division.place }}</td>
+                        <td data-label="Actions" class="actions-cell">
+                            <a href="/admin_edit_forest_divition/{{ division.id }}/" class="action-button edit" aria-label="Edit {{ division.name }}">
+                                <i class="fas fa-pencil-alt"></i> Edit
+                            </a>
+                            <a href="/admin_delete_forest_divition/{{ division.id }}/" class="action-button delete"
+                               onclick="return confirm('Are you sure you want to delete the division \'{{ division.name|escapejs }}\'? This action cannot be undone.');" aria-label="Delete {{ division.name }}">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-folder-open"></i>
+                {% if request.POST.textfield %}
+                    <p>No Forest Divisions Found</p>
+                    <span class="search-query-display">Your search for "{{ request.POST.textfield|escape }}" did not match any divisions.</span>
+                {% else %}
+                    <p>No Forest Divisions Available</p>
+                    <span class="search-query-display">Get started by adding a new forest division.</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler (more specific to this page's context)
+    const currentPath = window.location.pathname;
+    const relevantLinks = [
+        '/admin_view_forest_divition/',
+        '/admin_add_forest_divition/'
+        // Add '/admin_edit_forest_divition/' dynamically if needed, or use startsWith
+    ];
+    const forestDivisionBaseLink = document.querySelector('#sidebar ul li a[href="/admin_view_forest_divition/"]');
+
+    let isActive = relevantLinks.some(linkPath => currentPath === linkPath) ||
+                   currentPath.startsWith('/admin_edit_forest_divition/');
+
+    if (forestDivisionBaseLink && isActive) {
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        forestDivisionBaseLink.closest('li').classList.add('active-link');
+    }
+
+    // Small animation for table rows if you want
+    const tableRows = document.querySelectorAll('.responsive-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = 0; // Start hidden for animation
+    });
+});
+
+// Add this to your CSS (in the style block or a separate CSS file) for the animation
+const styleSheet = document.createElement("style");
+styleSheet.type = "text/css";
+styleSheet.innerText = `
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}`;
+document.head.appendChild(styleSheet);
+
+</script>
+{% endblock %}

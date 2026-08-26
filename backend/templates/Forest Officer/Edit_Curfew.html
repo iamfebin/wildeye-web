@@ -1,0 +1,181 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Edit Curfew - WildEye Officer{% endblock title %}
+
+{% block page_title %}Modify Existing Curfew{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css"> <!-- Optional: Example theme -->
+
+<style>
+    /* Styles are identical to the 'Send New Curfew' page, consider a shared CSS file/block */
+    .form-card-curfew {
+        border-radius: 0.75rem;
+    }
+    .form-card-curfew .card-header {
+        background-color: #ffc107; /* Warning yellow for edit actions */
+        color: #333; /* Darker text for yellow background */
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+    }
+    /* Ensure all form controls within this card get consistent sizing if using -lg in forms.py */
+    .form-card-curfew .form-control,
+    .form-card-curfew .form-select,
+    .form-card-curfew .flatpickr-input { /* Target visible flatpickr input */
+        /* if you used form-control-lg in forms.py, these will inherit or be styled by it.
+           If any specific overrides are needed, they can go here, but usually not necessary
+           if forms.py applies form-control-lg consistently.
+        */
+    }
+    /* CSS from previous step to ensure visible flatpickr input behaves well (if needed after form class additions) */
+    input.flatpickr-date.form-control-lg + input.flatpickr-input,
+    input.flatpickr-time.form-control-lg + input.flatpickr-input {
+        height: calc(1.5em + 1rem + 2px); /* Matches form-control-lg height */
+        padding: 0.5rem 1rem; /* Matches form-control-lg padding */
+        font-size: 1.25rem; /* Matches form-control-lg font-size */
+        line-height: 1.5;
+        border-radius: 0.3rem; /* Matches form-control-lg border-radius */
+        width: 100%; /* Crucial for consistent width */
+    }
+
+
+    .actions-footer {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between; /* Pushes buttons to opposite ends */
+        align-items: center;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+            <div class="card shadow-sm form-card-curfew">
+                <div class="card-header py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-pencil-square me-2" style="font-size: 1.3em;"></i>
+                        Edit Curfew Details
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {# The action URL will be the current page's URL for edit view #}
+                    <form method="post"> 
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger rounded-3 shadow-sm">
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {# Re-using the same field layout as "Send New Curfew" #}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.curfew_name.id_for_label }}" class="form-label fw-medium">{{ form.curfew_name.label }} {% if form.curfew_name.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.curfew_name }} {# Assumes form-control-lg is on widget #}
+                                {% for error in form.curfew_name.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.threat_level.id_for_label }}" class="form-label fw-medium">{{ form.threat_level.label }} {% if form.threat_level.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.threat_level }} {# Assumes form-select-lg is on widget #}
+                                {% for error in form.threat_level.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.curfew_details.id_for_label }}" class="form-label fw-medium">{{ form.curfew_details.label }} {% if form.curfew_details.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.curfew_details }} {# Assumes form-control-lg is on widget #}
+                            {% for error in form.curfew_details.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                             <label for="{{ form.affected_area.id_for_label }}" class="form-label fw-medium">{{ form.affected_area.label }} {% if form.affected_area.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.affected_area }} {# Assumes form-control-lg is on widget #}
+                            {% if form.affected_area.help_text %}<small class="form-text text-muted">{{ form.affected_area.help_text }}</small>{% endif %}
+                            {% for error in form.affected_area.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.start_date.id_for_label }}" class="form-label fw-medium">{{ form.start_date.label }} {% if form.start_date.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.start_date }} {# Assumes form-control-lg and flatpickr-date classes are on widget #}
+                                {% for error in form.start_date.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.start_time.id_for_label }}" class="form-label fw-medium">{{ form.start_time.label }} {% if form.start_time.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.start_time }} {# Assumes form-control-lg and flatpickr-time classes are on widget #}
+                                {% for error in form.start_time.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.end_date.id_for_label }}" class="form-label fw-medium">{{ form.end_date.label }} {% if form.end_date.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.end_date }}
+                                {% for error in form.end_date.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label for="{{ form.end_time.id_for_label }}" class="form-label fw-medium">{{ form.end_time.label }} {% if form.end_time.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.end_time }}
+                                {% for error in form.end_time.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="actions-footer">
+                            <a href="{% url 'forest_officer_view_curfew' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+                                <i class="bi bi-x-circle-fill me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning rounded-pill shadow-sm px-4 py-2"> {# Changed to btn-warning for Edit #}
+                                <i class="bi bi-save-fill me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Flatpickr for date fields
+    document.querySelectorAll(".flatpickr-date").forEach(function(element) {
+        flatpickr(element, {
+            altInput: true,
+            altFormat: "F j, Y",
+            dateFormat: "Y-m-d",
+            // minDate: "today", // You might want to allow editing past start dates for existing curfews
+                               // or set minDate based on context (e.g., only if it's a new end date)
+            // For edit, minDate might be more complex if start date itself is in the past
+        });
+    });
+
+    // Initialize Flatpickr for time fields
+    document.querySelectorAll(".flatpickr-time").forEach(function(element) {
+        flatpickr(element, {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i", // 24hr for server
+            altInput: true,
+            altFormat: "h:i K", // 12hr AM/PM for display
+            minuteIncrement: 15
+        });
+    });
+});
+</script>
+{% endblock extra_scripts %}

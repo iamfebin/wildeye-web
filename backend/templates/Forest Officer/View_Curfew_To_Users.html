@@ -1,0 +1,243 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Manage Curfews - WildEye Officer{% endblock title %}
+
+{% block page_title %}Manage Active & Upcoming Curfews{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<!-- DataTables Bootstrap 5 CSS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+
+<style>
+    /* Custom styles for this page, complementing Bootstrap */
+    .custom-card-curfews {
+        border-radius: 0.75rem;
+        border: none;
+        box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1);
+    }
+    .custom-card-curfews .card-header {
+        background-color: #f5f7f9;
+        border-bottom: 1px solid #e9ecef;
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+    .custom-card-curfews .card-header h5 {
+        font-weight: 500;
+    }
+     .custom-card-curfews .card-footer { /* If you add a footer */
+        background-color: #f5f7f9;
+        border-top: 1px solid #e9ecef;
+        border-bottom-left-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .table th, .table td {
+        vertical-align: middle;
+        padding: 0.9rem 0.75rem;
+    }
+    .table th {
+        font-weight: 500;
+    }
+
+    .actions-column .btn {
+        margin-right: 0.25rem;
+        margin-bottom: 0.25rem;
+        font-size: 0.8rem;
+    }
+
+    .badge.rounded-pill {
+        padding: 0.4em 0.75em;
+        font-size: 0.75em;
+        font-weight: 500;
+    }
+
+    .back-to-dashboard-container {
+        margin-top: 1.5rem;
+        text-align: center;
+    }
+
+    /* DataTables Bootstrap 5 overrides/enhancements */
+    div.dataTables_wrapper div.dataTables_length select {
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        background-color: #fff;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        appearance: none;
+        min-width: 80px; /* Adjust as needed */
+        margin-left: 0.5em; /* Space between "Show" and select */
+        margin-right: 0.5em; /* Space between select and "entries" */
+    }
+    div.dataTables_wrapper div.dataTables_filter input {
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        background-color: #fff;
+        margin-left: 0.5em; /* Space between "Search:" and input */
+    }
+    /* Labels for length and filter */
+    div.dataTables_wrapper div.dataTables_length label,
+    div.dataTables_wrapper div.dataTables_filter label {
+        font-weight: 500;
+        /* margin-bottom: 0; /* Removed as row now has mb-3 */
+        display: flex; /* To align text and control */
+        align-items: center; /* Vertical alignment */
+    }
+    /* Ensure filter label and input are grouped together before being pushed right by justify-content-end */
+    div.dataTables_wrapper div.dataTables_filter {
+        /* No text-align needed here if justify-content-end is on parent col */
+    }
+
+
+    div.dataTables_wrapper div.dataTables_paginate .page-item .page-link {
+        border-radius: 0.375rem;
+        margin: 0 2px;
+    }
+    div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm custom-card-curfews">
+        <div class="card-header d-flex flex-row align-items-center justify-content-between">
+            <h5 class="mb-0 d-flex align-items-center">
+                <i class="bi bi-sign-stop-fill me-2 text-danger"></i>Curfew Listings
+            </h5>
+            <a href="{% url 'forest_officer_send_curfew' %}" class="btn btn-danger rounded-pill shadow-sm">
+                <i class="bi bi-plus-circle-fill me-1"></i> Add New Curfew
+            </a>
+        </div>
+        <div class="card-body p-3">
+            {% if curfews %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0" id="curfewsTable" style="width:100%;">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Name</th>
+                                <th scope="col">Details</th>
+                                <th scope="col"><i class="bi bi-alarm-fill"></i> Start Time</th>
+                                <th scope="col"><i class="bi bi-alarm"></i> End Time</th>
+                                <th scope="col"><i class="bi bi-calendar-minus-fill"></i> Start Date</th>
+                                <th scope="col"><i class="bi bi-calendar-plus-fill"></i> End Date</th>
+                                <th scope="col"><i class="bi bi-geo-alt-fill"></i> Area</th>
+                                <th scope="col"><i class="bi bi-exclamation-diamond-fill"></i> Threat</th>
+                                <th scope="col" class="text-center" style="width: 100px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for curfew in curfews %}
+                            <tr>
+                                <td class="fw-medium">{{ curfew.curfew_name }}</td>
+                                <td data-bs-toggle="tooltip" title="{{ curfew.curfew_details }}">{{ curfew.curfew_details|truncatewords:10 }}</td>
+                                <td>{{ curfew.start_time|time:"h:i A" }}</td>
+                                <td>{{ curfew.end_time|time:"h:i A" }}</td>
+                                <td>{{ curfew.start_date|date:"M d, Y" }}</td>
+                                <td>{{ curfew.end_date|date:"M d, Y" }}</td>
+                                <td>{{ curfew.affected_area|truncatewords:10 }}</td>
+                                <td>
+                                    <span class="badge rounded-pill
+                                        {% if curfew.threat_level == 'High' or curfew.threat_level == 'high' %}bg-danger
+                                        {% elif curfew.threat_level == 'Medium' or curfew.threat_level == 'medium' %}bg-warning text-dark
+                                        {% elif curfew.threat_level == 'Low' or curfew.threat_level == 'low' %}bg-info text-dark
+                                        {% else %}bg-secondary
+                                        {% endif %}">
+                                        {{ curfew.get_threat_level_display|default:curfew.threat_level }}
+                                    </span>
+                                </td>
+                                <td class="actions-column text-center">
+                                    <a href="{% url 'forest_officer_edit_curfew' curfew.id %}" class="btn btn-sm btn-outline-warning rounded-pill mb-1" data-bs-toggle="tooltip" title="Edit Curfew">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                    <a href="{% url 'forest_officer_delete_curfew' curfew.id %}" class="btn btn-sm btn-outline-danger rounded-pill" data-bs-toggle="tooltip" title="Delete Curfew" onclick="return confirm('Are you sure you want to delete this curfew: \'{{ curfew.curfew_name|escapejs }}\'?');">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center m-3 rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>No curfews have been set yet.
+                    Click "Add New Curfew" to create one.
+                </div>
+            {% endif %}
+        </div>
+        {% if curfews %}
+        <div class="card-footer text-end">
+            <span class="text-muted small">Total Active/Upcoming Curfews: {{ curfews|length }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="back-to-dashboard-container mt-3">
+        <a href="{% url 'forest_officer_home' %}" class="btn btn-outline-primary rounded-pill shadow-sm">
+            <i class="bi bi-arrow-left-circle-fill me-2"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<!-- jQuery (DataTables dependency) -->
+<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- DataTables JS -->
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#curfewsTable').DataTable({
+        "order": [[ 4, "asc" ], [ 2, "asc" ]],
+        "pageLength": 10,
+        "language": {
+            "lengthMenu": "Show _MENU_ curfews per page",
+            "zeroRecords": "No curfews found",
+            "info": "Showing page _PAGE_ of _PAGES_ (Total: _TOTAL_ curfews)",
+            "infoEmpty": "No curfews available",
+            "infoFiltered": "(filtered from _MAX_ total curfews)",
+            "search": "Search:"
+        },
+        "responsive": true,
+        "columnDefs": [
+            { "orderable": false, "targets": [1, 8] }
+        ],
+        "dom":
+            "<'row mb-3 align-items-center'"+ // Add align-items-center to the row
+                "<'col-sm-12 col-md-6'l>"+ // Length menu in its own column, default alignment
+                "<'col-sm-12 col-md-6 d-flex justify-content-md-end'f>"+ // Filter (search) in its own column, pushed to the end
+            ">" +
+            "<'row'<'col-sm-12'tr>>" + // Table
+            "<'row mt-3 align-items-center'"+ // Add align-items-center to this row too
+                "<'col-sm-12 col-md-5'i>"+ // Info on the left
+                "<'col-sm-12 col-md-7 d-flex justify-content-md-end'p>"+ // Pagination on the right, pushed to the end
+            ">",
+    });
+});
+</script>
+
+<script>
+    // Initialize Bootstrap Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock extra_scripts %}

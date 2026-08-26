@@ -1,0 +1,15 @@
+# Security & Vulnerability Scanners
+bandit
+pip-audit
+
+# Code Quality, Formatting & Linting
+ruff
+
+# Django Profiling & Query Optimization
+django-debug-toolbar
+django-silk
+
+# Memory & Performance Debugging
+memory-profiler
+psutil
+sentry-sdk

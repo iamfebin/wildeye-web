@@ -1,0 +1,332 @@
+{% extends "Admin/admin_base.html" %}
+
+{% block title %}WildEye Admin Homepage{% endblock %}
+
+{% block styles %}
+    {# Your existing styles for cards and charts #}
+    /* Cards Container Specific Styles */
+    .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    /* Card Styling Specific to admin_home.html */
+    .card {
+        background-color: #ffffff;
+        <!-- padding: 25px; -->
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .card-link-wrapper { /* New wrapper for the link content */
+        display: flex;
+        align-items: center;
+        padding: 25px; /* Moved padding here from .card */
+        text-decoration: none;
+        color: #333; /* Default text color for card content */
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(to right, #ccc, #bbb);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s ease-out;
+        z-index: 1;
+    }
+    /* Specific colors for the ::before pseudo-element for each card type */
+    .card.officers::before { background: linear-gradient(to right, #42A5F5, #2196F3); } /* Blue */
+    .card.stations::before { background: linear-gradient(to right, #FFA726, #FB8C00); } /* Orange */
+    .card.divisions::before { background: linear-gradient(to right, #66BB6A, #43A047); } /* Green */
+    .card.requests::before { background: linear-gradient(to right, #AB47BC, #9C27B0); } /* Purple */
+
+
+    .card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        background-color: #f8f8f8;
+    }
+
+    .card .icon {
+        font-size: 2.5em;
+        margin-right: 20px;
+        padding: 15px;
+        border-radius: 50%;
+        color: #fff;
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        z-index: 2;
+        position: relative;
+        min-height: 60px;
+        min-width: 60px; /* Ensure minimum width for the icon container */
+        text-align: center; /* Center the icon within its container */
+        flex-shrink: 0; /* Prevent icon container from shrinking */
+    }
+
+    .card:hover .icon {
+        transform: scale(1.1);
+    }
+
+    .card .info h3 {
+        margin: 0 0 5px 0;
+        font-size: 0.9em;
+        color: #777;
+        text-transform: uppercase;
+        transition: color 0.3s;
+    }
+
+    .card .info p {
+        margin: 0;
+        font-size: 2em;
+        font-weight: bold;
+        color: #333;
+        transition: color 0.3s;
+    }
+
+    /* Specific base colors for each card icon */
+    .card.officers .icon { background-color: #2196F3; } /* Blue */
+    .card.stations .icon { background-color: #FB8C00; } /* Orange */
+    .card.divisions .icon { background-color: #4CAF50; } /* Green */
+    .card.requests .icon { background-color: #9C27B0; } /* Purple */
+
+    /* Icon hover color change */
+    .card.officers:hover .icon { background-color: #1976D2; }
+    .card.stations:hover .icon { background-color: #EF6C00; }
+    .card.divisions:hover .icon { background-color: #388E3C; }
+    .card.requests:hover .icon { background-color: #7B1FA2; }
+
+    /* Charts Container Specific Styles */
+    .charts-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .chart-card {
+        background-color: #ffffff;
+        padding: 59px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: background-color 0.3s;
+        height: 400px; /* Ensure chart cards have a fixed height */
+    }
+    .chart-card h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        text-align: center;
+        color: #333;
+        transition: color 0.3s;
+    }
+
+    .chartjs-render-monitor {
+        transition: color 0.3s, border-color 0.3s;
+    }
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <i id="hamburger" class="fas fa-bars"></i>
+    <h1>Admin Dashboard</h1>
+    <div></div>
+</div>
+
+<div class="cards-container">
+    {# Card 1: Forest Officers #}
+    <a href="{% url 'admin_view_forest_officer' %}" class="card officers"> {# Link wraps the card content #}
+        <div class="card-link-wrapper"> {# Inner wrapper for flex content #}
+            <div class="icon"><i class="fas fa-users"></i></div>
+            <div class="info">
+                <h3>Forest Officers</h3>
+                <p id="officers-count">{{ card_officers_count }}</p>
+            </div>
+        </div>
+    </a>
+
+    {# Card 2: Forest Stations #}
+    <a href="{% url 'admin_view_forest_station' %}" class="card stations">
+        <div class="card-link-wrapper">
+            <div class="icon"><i class="fas fa-building"></i></div>
+            <div class="info">
+                <h3>Forest Stations</h3>
+                <p id="stations-count">{{ card_stations_count }}</p>
+            </div>
+        </div>
+    </a>
+
+    {# Card 3: Forest Divisions #}
+    {# Ensure you have a URL pattern named 'admin_view_forest_division_page' or similar #}
+    <a href="{% url 'admin_view_forest_divition' %}" class="card divisions">
+        <div class="card-link-wrapper">
+            <div class="icon"><i class="fas fa-tree"></i></div>
+            <div class="info">
+                <h3>Forest Divisions</h3>
+                <p id="divisions-count">{{ card_divisions_count }}</p>
+            </div>
+        </div>
+    </a>
+
+    {# Card 4: IT Support Requests #}
+    <a href="{% url 'admin_view_tech_support_requests' %}" class="card requests">
+        <div class="card-link-wrapper">
+            <div class="icon"><i class="fas fa-tools"></i></div>
+            <div class="info">
+                <h3>IT Support Requests</h3>
+                <p id="requests-count">{{ card_requests_count }}</p>
+            </div>
+        </div>
+    </a>
+</div>
+
+<div class="charts-container">
+    <div class="chart-card">
+        <h3>Recent 24hr Requests Received</h3> {# <--- TITLE CHANGED HERE #}
+        <canvas id="hourlyRequestsReceivedChart"></canvas> {# <--- ID CHANGED HERE for clarity #}
+    </div>
+    <div class="chart-card">
+        <h3>IT Support Requests Status</h3>
+        <canvas id="itSupportRequestsChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Chart.js global defaults
+    let chartTickColor = '#666';
+    let chartGridColor = 'rgba(0, 0, 0, 0.1)';
+    let chartLegendColor = '#333';
+
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.color = chartLegendColor;
+        Chart.defaults.borderColor = chartGridColor;
+
+        // Hourly Requests Received Chart (Last 24 hours)
+        const hourlyRequestsCtx = document.getElementById('hourlyRequestsReceivedChart'); // Use new ID
+        if (hourlyRequestsCtx) {
+            let hourlyLabels = [];
+            let hourlyData = [];
+            try {
+                hourlyLabels = JSON.parse('{{ hourly_received_labels_json|escapejs }}'); // Use new context variable
+                hourlyData = JSON.parse('{{ hourly_received_data_json|escapejs }}');     // Use new context variable
+            } catch (e) {
+                console.error("Error parsing hourly received chart data:", e);
+            }
+
+            new Chart(hourlyRequestsCtx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: hourlyLabels,
+                    datasets: [
+                        {
+                            label: 'Requests Received', // Updated label
+                            data: hourlyData,
+                            borderColor: 'rgba(255, 171, 70, 1)', // Blue for received requests
+                            backgroundColor: 'rgba(255, 171, 70, 0.2)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    
+                    plugins: {
+                        legend: { position: 'top', labels: { color: chartLegendColor } },
+                        title: { display: false } // Title is in <h3>
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: chartGridColor },
+                            ticks: { color: chartTickColor, stepSize: 1 } // Integer steps
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: chartTickColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        // IT Support Requests Status Chart (Pie Chart - remains the same)
+        const itSupportRequestsCtx = document.getElementById('itSupportRequestsChart');
+        if (itSupportRequestsCtx) {
+             let statusLabels = [];
+             let statusData = [];
+             try {
+                statusLabels = JSON.parse('{{ status_labels_json|escapejs }}');
+                statusData = JSON.parse('{{ status_data_json|escapejs }}');
+             } catch (e) {
+                console.error("Error parsing status chart data:", e);
+             }
+
+            new Chart(itSupportRequestsCtx.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        label: 'IT Support Requests Status',
+                        data: statusData,
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.8)',  /* Resolved */
+                            'rgba(255, 26, 8, 0.8)',  /* Pending */
+                            'rgba(46, 204, 113, 0.8)',  /* Dispatched */
+                            'rgba(155, 89, 182, 0.8)',
+                            'rgba(230, 126, 34, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(52, 152, 219, 1)',
+                            'rgba(255, 26, 8, 1)',
+                            'rgba(46, 204, 113, 1)',
+                            'rgba(155, 89, 182, 1)',
+                            'rgba(230, 126, 34, 1)'
+                        ],
+                        borderWidth: 1,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // aspectRatio: 1.5,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: chartLegendColor
+                            }
+                        },
+                        title: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    } else {
+        console.warn("Chart.js not loaded, charts will not be initialized.");
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,277 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}My Tech Support Requests - WildEye Officer{% endblock title %}
+
+{% block extra_head %}
+<!-- DataTables CSS for Bootstrap 5 -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
+<!-- Custom CSS for Enhanced Design -->
+<style>
+    /* Card and Button Enhancements */
+    .custom-card {
+        border: none;
+        border-radius: 0.8rem;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .btn-pill-hover {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+
+    .btn-pill-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 7px 20px rgba(0, 123, 255, 0.3);
+    }
+
+    /* Table Container for Rounded Corners */
+    .table-container {
+        border-radius: 0.6rem;
+        overflow: hidden; /* This is crucial for rounding the table corners */
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Table Styling */
+    #requestsTable {
+        border-collapse: collapse; /* Removes space between borders */
+    }
+
+    #requestsTable thead {
+        background-color: #f8f9fa;
+    }
+
+    #requestsTable thead th {
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    #requestsTable tbody td {
+        vertical-align: middle;
+        padding: 0.9rem 0.75rem;
+        border-top: 1px solid #e9ecef; /* Replaces striped effect with clean lines */
+    }
+    
+    #requestsTable.table-hover tbody tr:hover {
+        background-color: #f1f6ff; /* A soft blue for hover */
+        cursor: pointer;
+    }
+
+    /* Pill-shaped Status Badges */
+    .status-badge {
+        font-size: 0.8em;
+        font-weight: 600;
+        padding: .4em .8em;
+    }
+
+    /* NEW: Style for tooltip trigger text */
+    .tooltip-trigger {
+        cursor: help;
+        border-bottom: 1px dotted #6c757d;
+    }
+
+    /* DataTables Customization */
+    div.dataTables_wrapper div.dataTables_filter input,
+    div.dataTables_wrapper div.dataTables_length select {
+        border-radius: 0.3rem;
+        border: 1px solid #ced4da;
+    }
+
+    .dataTables_info {
+        padding-top: 0.5rem;
+        padding-left: 0.5rem;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block page_title %}My Tech Support Requests{% endblock page_title %}
+
+{% block content %}
+<div class="card custom-card">
+    <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-dark">Request History</h5>
+        <a href="{% url 'forest_officer_request_tech_support' %}" class="btn btn-primary rounded-pill btn-pill-hover px-4 py-2">
+            <i class="bi bi-plus-circle-fill me-2"></i>Submit New Request
+        </a>
+    </div>
+    <div class="card-body pt-0">
+        {% if requests %}
+        <div class="table-container">
+            <div class="table-responsive">
+                <table id="requestsTable" class="table table-hover" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Issue Type</th>
+                            <th>Description</th>
+                            <th>Date Requested</th>
+                            <th>Status</th>
+                            <th>Resolution Notes</th>
+                            <th>Date Resolved</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in requests %}
+                        <tr>
+                            <td>{{ req.get_issue_type_display }}</td>
+                            <!-- UPDATED Description cell with tooltip -->
+                            <td>
+                                <span class="tooltip-trigger" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ req.description }}">
+                                    {{ req.description|truncatewords:15 }}
+                                </span>
+                            </td>
+                            <td>{{ req.request_date|date:"M d, Y, P" }}</td>
+                            <td>
+                                {% if req.status == 'pending' %}
+                                    <span class="badge rounded-pill bg-warning text-dark status-badge">
+                                        <i class="bi bi-clock-history me-1"></i> {{ req.get_status_display }}
+                                    </span>
+                                {% elif req.status == 'dispatched' %}
+                                    <span class="badge rounded-pill bg-info text-dark status-badge">
+                                        <i class="bi bi-truck me-1"></i> {{ req.get_status_display }}
+                                    </span>
+                                {% elif req.status == 'resolved' %}
+                                    <span class="badge rounded-pill bg-success status-badge">
+                                        <i class="bi bi-check-circle-fill me-1"></i> {{ req.get_status_display }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge rounded-pill bg-secondary status-badge">
+                                        {{ req.get_status_display }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <!-- UPDATED Resolution Notes cell with tooltip -->
+                            <td>
+                                {% if req.resolution_notes %}
+                                <span class="tooltip-trigger" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="{{ req.resolution_notes }}">
+                                    {{ req.resolution_notes|truncatewords:15 }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted fst-italic">Not available</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if req.resolved_date %}{{ req.resolved_date|date:"M d, Y, P" }}{% else %}<span class="text-muted fst-italic">Not resolved</span>{% endif %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info text-center mt-3" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>You have not submitted any tech support requests yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<!-- jQuery (required for DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<!-- DataTables & Bootstrap 5 Integration JS -->
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#requestsTable').DataTable({
+        "order": [[ 2, "desc" ]],
+        "pageLength": 10,
+        "language": {
+            "search": "",
+            "searchPlaceholder": "Search requests...",
+            "lengthMenu": "&nbsp;&nbsp;Show _MENU_ entries",
+            "paginate": {
+                "previous": "<i class='bi bi-chevron-left'></i>",
+                "next": "<i class='bi bi-chevron-right'></i>"
+            }
+        },
+        "columnDefs": [ {
+            "orderable": false,
+            "targets": [1, 4] // Disable sorting on Description and Resolution Notes
+        } ],
+        // UPDATED: Initialize tooltips on every table draw
+        "drawCallback": function( settings ) {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            // Re-initialize tooltips to ensure they work on all pages
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl, {
+                // To prevent tooltips from being trapped inside the responsive table container
+                container: 'body' 
+            }));
+        }
+    });
+
+    $('.dataTables_filter input').addClass('form-control-sm');
+});
+</script>
+{% endblock extra_scripts %}
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tech Support Requests</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        h1 { color: #333; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .status-pending { color: orange; font-weight: bold; }
+        .status-dispatched { color: blue; font-weight: bold; }
+        .status-resolved { color: green; font-weight: bold; }
+        .no-requests { text-align: center; color: #555; margin-top: 20px; }
+        a { display: block; text-align: center; margin-top: 15px; color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>My Tech Support Requests</h1>
+
+        {% if requests %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Issue Type</th>
+                    <th>Description</th>
+                    <th>Date Requested</th>
+                    <th>Status</th>
+                    <th>Resolution Notes</th>
+                    <th>Date Resolved</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.get_issue_type_display }}</td>
+                    <td>{{ req.description }}</td>
+                    <td>{{ req.request_date|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <span class="status-{{ req.status }}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{% if req.resolution_notes %}{{ req.resolution_notes }}{% else %}N/A{% endif %}</td>
+                    <td>{% if req.resolved_date %}{{ req.resolved_date|date:"M d, Y H:i" }}{% else %}N/A{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-requests">You have not submitted any tech support requests yet.</p>
+        {% endif %}
+        <a href="{% url 'forest_officer_request_tech_support' %}">Submit New Tech Support Request</a>
+        <a href="{% url 'forest_officer_home' %}">Back to Dashboard</a>
+    </div>
+</body>
+</html> -->

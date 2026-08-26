@@ -1,0 +1,131 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}{{ editing|yesno:"Edit Reply,Send Reply" }} to Complaint - WildEye Officer{% endblock title %}
+
+{% block page_title %}{{ editing|yesno:"Edit Reply,Send Reply" }}{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    /* Custom styles for this page - refined for Bootstrap integration */
+    .complaint-summary-card {
+        border-radius: 0.5rem; /* Standard Bootstrap rounding */
+        background-color: #f8f9fa; /* Light grey background */
+        border: 1px solid #e9ecef;
+        margin-bottom: 1.5rem;
+    }
+    .complaint-summary-card .card-body {
+        padding: 1.25rem;
+    }
+    .complaint-summary-card .card-title {
+        font-weight: 500;
+        color: #343a40;
+        margin-bottom: 0.75rem;
+    }
+    .complaint-summary-card p {
+        font-size: 0.95em;
+        color: #495057;
+        margin-bottom: 0.4rem;
+    }
+    .complaint-summary-card p strong {
+        color: #212529;
+    }
+    .complaint-summary-card .complaint-text-display {
+        font-style: italic;
+        color: #333;
+        padding: 0.5rem 0;
+        border-top: 1px dashed #ced4da;
+        margin-top: 0.5rem;
+    }
+
+    /* Styling for the form if 'form-control' class is added to textarea in forms.py */
+    .form-reply-section .form-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        font-size: 1.1em;
+    }
+    /* textarea.form-control will be styled by Bootstrap by default if class is added */
+
+    .actions-footer {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+        display: flex; /* For aligning buttons */
+        justify-content: space-between; /* Pushes "Back" and "Submit" apart */
+        align-items: center;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+            <div class="card shadow-sm complaint-summary-card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Original Complaint Details</h5>
+                    <p><strong>User:</strong>
+                        {% if complaint.USER %}
+                            {{ complaint.USER.first_name }} {{ complaint.USER.last_name }}
+                            {% if complaint.USER.REGULAR_LOGIN %}
+                                <small class="text-muted">({{ complaint.USER.REGULAR_LOGIN.username }})</small>
+                            {% endif %}
+                        {% else %}
+                            Unknown User
+                        {% endif %}
+                    </p>
+                    <p><strong><i class="bi bi-telephone-outbound-fill me-1 text-success"></i>Contact:</strong> {{ complaint.contact_number|default:"Not Provided" }}</p>
+                    {% if complaint.STATION %}
+                    <p><strong><i class="bi bi-building me-1"></i>Station:</strong> {{ complaint.STATION.name }}</p>
+                    {% endif %}
+                    <p><strong><i class="bi bi-calendar-check me-1"></i>Submitted:</strong> {{ complaint.timestamp|date:"F d, Y, P" }}</p>
+                    <p class="complaint-text-display mt-2"><strong><i class="bi bi-chat-left-text-fill me-1"></i>Complaint:</strong> {{ complaint.complaint }}</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-reply-all-fill me-2 text-primary"></i>
+                        {{ editing|yesno:"Your Updated Reply,Your Reply" }}
+                    </h5>
+                    <form method="post" class="form-reply-section">
+                        {% csrf_token %}
+
+                        {# Loop through form fields to apply Bootstrap structure manually if not using a widget customizer lib #}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                                {{ field }} {# Assumes widget has 'class': 'form-control' from forms.py #}
+                                {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                        
+
+                        {# {{ form.as_p }} #}
+
+                        <div class="actions-footer">
+                            <a href="{% url 'forest_officer_view_user_complaints' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+                                <i class="bi bi-arrow-left-circle-fill me-2"></i>Back to Complaints
+                            </a>
+                            <button type="submit" class="btn btn-success rounded-pill shadow-sm px-4 py-2">
+                                <i class="bi bi-check-circle-fill me-2"></i>{{ editing|yesno:"Update Reply,Submit Reply" }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}

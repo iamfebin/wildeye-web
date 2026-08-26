@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>View Camera Admin</title>
+</head>
+
+<body>
+<form id="form1" name="form1" method="post" action="">
+  {% csrf_token %}
+  <table width="440" border="1">
+    <tr>
+      <td colspan="5"><div align="left"><a href="/admin_add_camera/">Add new </a></div></td>
+      <td width="144"><label>
+        <input type="text" name="textfield" placeholder="Search using camera id" />
+      </label></td>
+      <td width="56"><label>
+        
+        <div align="center">
+          <input type="submit" name="Submit" value="Search" /></div>
+          </label>
+          </td>
+    </tr>
+    <tr>
+      <td width="24"><div align="center">Sno</div></td>
+      <td width="37">Camera No.  </td>
+      <td width="37">Latitude</td>
+      <td>Longitude</td>
+      <td colspan="3"><div align="center">Actions</div></td>
+    </tr>
+
+      {% if cameras %}
+        {% for camera in cameras %}
+        <tr>
+          <td align="center">{{ forloop.counter }}</td>
+          <td align="center">{{ camera.camera_id }}</td>
+          <td align="center">{{ camera.latitude }}</td>
+          <td align="center">{{ camera.longitude }}</td>
+          <td><div align="center"><a href="#">view camera</a></div></td>
+          <td><div align="center"><a href="{% url 'admin_edit_camera' camera.id %}">edit</a></div></td>
+          <td><div align="center"><a href="{% url 'admin_delete_camera' camera.id %}" onclick="return confirm('Are you sure you want to delete camera {{ camera.camera_id }}?');">delete</a></div></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" align="center">No cameras found by that id.</td></tr>
+        {% endfor %}
+
+      {% else %}
+             <tr>
+                <td colspan="7"><div align="center">No cameras</div></td>
+             </tr>
+      {% endif %}
+  </table>
+</form>
+</body>
+</html>

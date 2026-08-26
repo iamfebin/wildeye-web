@@ -1,0 +1,486 @@
+/* Import Google Font */
+body {
+    font-family: 'Roboto', 'Poppins', sans-serif;
+    background-color: #f9f9f9;
+    overflow-x: hidden;
+    padding-top: 60px; /* Height of the top-bar */
+    padding-left: 72px; /* Width of the mini-sidebar */
+    transition: padding-left 0.3s ease-in-out;
+}
+
+body.sidebar-expanded-overlay {
+    /* Styles when sidebar overlay is active, if needed for body */
+}
+
+
+/* General Transitions */
+a, .btn {
+    transition: all 0.2s ease-in-out;
+}
+
+/* --- Top Bar --- */
+#top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: #282828;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    z-index: 1030;
+    border-bottom: 1px solid #3a3a3a;
+}
+
+.top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+}
+.top-bar-center {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    max-width: 730px;
+    margin: 0 40px;
+}
+
+#sidebar-toggler.btn-icon-only {
+    background: transparent;
+    border: none;
+    padding: 8px 12px;
+    margin-right: 16px;
+}
+#sidebar-toggler.btn-icon-only:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+}
+
+.top-bar-logo {
+    height: 70px;
+    margin-right: 8px;
+}
+.top-bar-title-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+}
+.top-bar-title {
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.search-form {
+    display: flex;
+    width: 100%;
+    background-color: #121212;
+    border: 1px solid #303030;
+    border-radius: 40px;
+    overflow: hidden;
+}
+.search-input.form-control {
+    flex-grow: 1;
+    background-color: transparent;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 40px 0 0 40px;
+}
+.search-input.form-control:focus {
+    background-color: transparent;
+    box-shadow: none;
+    border-color: #1c62b9;
+}
+.search-input.form-control::placeholder {
+    color: #aaa;
+}
+.btn-search {
+    background-color: #303030;
+    border: none;
+    color: #aaa;
+    padding: 8px 20px;
+    border-radius: 0 40px 40px 0;
+}
+.btn-search:hover {
+    background-color: #3f3f3f;
+    color: #fff;
+}
+
+.profile-picture-topbar {
+    width: 32px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.profile-dropdown-toggler i {
+    font-size: 2rem;
+}
+.profile-dropdown-toggler::after {
+    display: none;
+}
+
+/* --- REFINED Styles for Officer Info in Top Bar --- */
+.officer-info-topbar {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;  /* Aligns the text lines to the right */
+    justify-content: center; /* Vertically centers the name/station block if it has space */
+    margin-right: 12px;     /* Space between this text block and the profile picture */
+    text-align: right;      /* Fallback text-align for content within each line */
+    line-height: 1.25;      /* Adjust line height for readability of the two lines */
+    max-width: 160px;       /* Prevents block from becoming too wide with long text. Adjust as needed. */
+                            /* This also helps with responsiveness on smaller screens. */
+}
+
+.officer-info-topbar .officer-name-display {
+    font-size: 0.875rem;    /* Approx 14px if base font is 16px. Good for a name. */
+    font-weight: 500;       /* Medium weight - stands out but not overly bold. */
+    color: #ffffff;         /* Bright white for the name. */
+    white-space: nowrap;    /* Prevent wrapping. */
+    overflow: hidden;       /* Hide overflow. */
+    text-overflow: ellipsis;/* Show '...' if text is too long. */
+    width: 100%;            /* Ensures it uses the available width up to parent's max-width. */
+}
+
+.officer-info-topbar .officer-station-display {
+    font-size: 0.75rem;      /* Approx 12px. Smaller and subordinate to the name. */
+    font-weight: 400;        /* Normal weight. */
+    color: #b0bec5;          /* A softer, slightly desaturated color (e.g., a light grey or blue-grey). */
+                               /* This creates a nice contrast with the brighter name. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    margin-top: 1px;         /* A very small space between the name and station. */
+}
+
+/* Responsive adjustments for Officer Info block */
+@media (max-width: 768px) { /* md breakpoint, aligns with your existing media queries */
+    .officer-info-topbar {
+        max-width: 130px; /* Reduce max width allowed for the text */
+        margin-right: 10px; /* Slightly less margin */
+    }
+    .officer-info-topbar .officer-name-display {
+        font-size: 0.825rem; /* Slightly smaller name */
+    }
+    .officer-info-topbar .officer-station-display {
+        font-size: 0.7rem; /* Slightly smaller station */
+    }
+}
+
+@media (max-width: 576px) { /* sm breakpoint */
+    /* At this size, your .top-bar-center is also heavily modified. Space is tight. */
+    .officer-info-topbar {
+        max-width: 100px; /* Further reduce max width */
+        margin-right: 8px;
+    }
+    .officer-info-topbar .officer-name-display {
+        font-size: 0.75rem; /* ~12px */
+    }
+    .officer-info-topbar .officer-station-display {
+        /* Option 1: Hide the station if it's too cluttered */
+        /* display: none; */
+
+        /* Option 2: Make it very small (if still desired) */
+         font-size: 0.65rem; /* ~10px, can be hard to read */
+    }
+}
+
+/* Optional: Hide completely on very, very small screens if it still breaks layout */
+/* Adjust breakpoint as necessary, e.g., 480px, 420px, or 380px */
+@media (max-width: 420px) {
+    .officer-info-topbar {
+        display: none;
+    }
+}
+
+
+
+/* --- Sidebar --- */
+#sidebar {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    bottom: 0;
+    width: 72px;
+    background-color: #282828;
+    color: #fff;
+    z-index: 1020;
+    overflow-x: hidden;
+    overflow-y: auto;
+    transition: width 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+#sidebar::-webkit-scrollbar { display: none; }
+#sidebar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+#sidebar .sidebar-header-expanded,
+#sidebar .sidebar-footer-expanded {
+    display: none;
+    padding: 16px;
+    border-bottom: 1px solid #3a3a3a;
+}
+#sidebar .sidebar-footer-expanded {
+    border-bottom: none;
+    border-top: 1px solid #3a3a3a;
+    margin-top: auto;
+    font-size: 0.8em;
+}
+#sidebar .navbar-brand-expanded {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: #fff;
+}
+#sidebar .navbar-brand-expanded .top-bar-logo { margin-right: 10px;}
+
+
+#sidebar ul.components {
+    padding: 8px 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar ul li.nav-item {
+    /* margin-bottom: 2px; */
+}
+
+#sidebar ul li a.nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 0;
+    font-size: 0.65rem;
+    color: #aaa;
+    text-decoration: none;
+    text-align: center;
+    height: 70px;
+    position: relative;
+    border-left: 3px solid transparent; /* Space for green line, transparent initially */
+}
+#sidebar ul li a.nav-link i {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+#sidebar ul li a.nav-link .link-text {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    padding: 0 4px;
+}
+
+/* Mini-sidebar hover/active */
+#sidebar:not(.expanded) ul li a.nav-link:hover,
+#sidebar:not(.expanded) ul li.active a.nav-link {
+    background-color: #3f3f3f;
+    color: #fff;
+    border-left-color: transparent; /* Explicitly no green line for mini */
+}
+
+/* Arrow on parent link in mini-sidebar (still hidden by default as per Bootstrap) */
+#sidebar:not(.expanded) ul li.has-submenu > a.nav-link.dropdown-toggle::after {
+    display: none; /* Ensure it's hidden in mini mode too */
+}
+#sidebar:not(.expanded) ul ul.submenu {
+    display: none !important; /* Force hide in mini view */
+}
+
+
+/* --- Expanded Sidebar (Overlay Style) --- */
+#sidebar.expanded {
+    width: 240px;
+    top: 0;
+    height: 100vh;
+    box-shadow: 4px 0 12px rgba(0,0,0,0.2);
+    z-index: 1040;
+}
+
+#sidebar.expanded .sidebar-header-expanded,
+#sidebar.expanded .sidebar-footer-expanded {
+    display: block;
+}
+
+#sidebar.expanded ul li a.nav-link {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 20px; /* Adjusted padding for expanded */
+    font-size: 0.9rem;
+    height: auto;
+    text-align: left;
+    /* border-left: 3px solid transparent; (inherited) */
+}
+#sidebar.expanded ul li a.nav-link i {
+    font-size: 1.25rem;
+    margin-bottom: 0;
+    margin-right: 16px;
+}
+#sidebar.expanded ul li a.nav-link .link-text {
+    display: inline-block;
+    overflow: visible;
+    white-space: normal;
+}
+
+/* Restored green line and hue for expanded sidebar links */
+#sidebar.expanded ul li a.nav-link:hover {
+    color: #fff;
+    background: rgba(40, 167, 69, 0.1); /* Light green hue */
+    border-left-color: #28a745; /* Green line */
+}
+
+#sidebar.expanded ul li.active > a.nav-link, /* Active parent nav item */
+#sidebar.expanded ul li a.nav-link.active { /* Generic active class for any link including toggles */
+    color: #fff;
+    background: rgba(40, 167, 69, 0.2); /* Stronger green hue for active */
+    border-left-color: #28a745; /* Green line for active */
+    font-weight: 500;
+}
+
+/* Expanded Sidebar Submenu Styling */
+/* Hide the dropdown arrow for submenu toggles when sidebar is expanded */
+#sidebar.expanded ul li.has-submenu > a.nav-link[data-bs-toggle="collapse"]::after {
+    display: none !important;
+}
+
+#sidebar.expanded ul ul.submenu {
+    /* display: block; This will be handled by .show class from JS */
+    list-style: none;
+    padding-left: 0;
+    background-color: rgba(0,0,0,0.15); /* Neutral dark sub-level background */
+}
+#sidebar.expanded ul ul.submenu a {
+    padding: 10px 20px 10px 50px; /* Indent submenu items */
+    font-size: 0.85rem;
+    color: #ccc; /* Default text color for submenu items */
+    display: block;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Green hue only on hover or when the specific submenu item is active */
+#sidebar.expanded ul ul.submenu a:hover,
+#sidebar.expanded ul ul.submenu li.active-submenu > a { /* Targets the <a> within an .active-submenu <li> */
+    color: #fff; /* Text color for hovered/active submenu item */
+    background-color: rgba(40, 167, 69, 0.15); /* Green hue for submenu hover/active */
+    /* border-left-color: #28a745; (optional green line for active submenu items) */
+}
+
+
+/* Page Content Wrapper */
+#page-content-wrapper {
+    width: 100%;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+#content {
+    min-height: calc(100vh - 60px);
+    background-color: #f1f1f1;
+}
+.page-header-below-topbar {
+    /* styles if needed */
+}
+.page-title {
+    font-size: 1.5rem;
+    color: #030303;
+}
+
+/* Sidebar Page Overlay */
+.sidebar-page-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1035;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease-in-out, visibility 0s 0.3s linear;
+}
+.sidebar-page-overlay.active {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+/* Dropdown menu z-index fix */
+.dropdown-menu {
+    z-index: 1050;
+}
+
+/* Dashboard Cards (Placeholder - Keep your existing styles or adapt) */
+.dashboard-card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) { /* lg breakpoint */
+    .top-bar-center {
+        margin: 0 20px;
+    }
+}
+
+@media (max-width: 768px) { /* md breakpoint - Sidebar always overlay */
+    body {
+        padding-left: 0;
+    }
+    #sidebar {
+        left: -240px; /* Default hidden state for mobile */
+        width: 240px; /* When it slides in, use expanded width */
+        top: 0;
+        height: 100vh;
+        transition: left 0.3s ease-in-out;
+    }
+    #sidebar.expanded {
+        left: 0; /* Slide in */
+    }
+
+    /* Ensure expanded styles apply correctly on mobile when .expanded is active */
+    #sidebar.expanded ul li a.nav-link { flex-direction: row; align-items: center; justify-content: flex-start; padding: 12px 20px; font-size: 0.9rem; height: auto; text-align: left; }
+    #sidebar.expanded ul li a.nav-link i { font-size: 1.25rem; margin-bottom: 0; margin-right: 16px; }
+    #sidebar.expanded ul li a.nav-link .link-text { display: inline-block; }
+    #sidebar.expanded .sidebar-header-expanded, #sidebar.expanded .sidebar-footer-expanded { display: block; }
+    /* Arrow still hidden by general rule for .expanded */
+    /* #sidebar.expanded ul li.has-submenu > a.nav-link[data-bs-toggle="collapse"]::after { display: none !important; } */
+
+
+    .top-bar-title { display: none; }
+    .top-bar-center { max-width: 50%; }
+    #page-content-wrapper { margin-left: 0 !important; }
+}
+
+@media (max-width: 576px) { /* sm breakpoint */
+    .top-bar-center {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 180px);
+        margin: 0;
+        padding: 0 5px;
+    }
+    .top-bar-left, .top-bar-right {
+        flex-basis: 90px;
+    }
+    .top-bar-left { justify-content: flex-start; }
+    .top-bar-right { justify-content: flex-end; }
+
+    .page-title { font-size: 1.3rem; }
+}

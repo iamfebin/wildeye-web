@@ -1,0 +1,312 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Camera Alerts - {{ officer_station_name|default:"Your Station" }} - WildEye Officer{% endblock title %}
+{% block page_title %}Camera Detected Alerts for {{ officer_station_name|default:"Your Station" }}{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/select/1.7.0/css/select.bootstrap5.min.css">
+
+<style>
+    /* Styles from previous step ... */
+    .custom-card-camera-alerts { border-radius: 0.75rem; border: none; box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1); }
+    .custom-card-camera-alerts .card-header { background-color: #f5f7f9; border-bottom: 1px solid #e9ecef; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; padding: 1rem 1.25rem; }
+    .custom-card-camera-alerts .card-header h5 { font-weight: 500; }
+    .custom-card-camera-alerts .card-footer { background-color: #f5f7f9; border-top: 1px solid #e9ecef; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; padding: 1rem 1.25rem; }
+    .table th, .table td { vertical-align: middle; padding: 0.9rem 0.75rem; }
+    .table th { font-weight: 500; }
+    .alert-image-preview { max-width: 70px; max-height: 70px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #dee2e6; cursor: pointer; }
+    .form-check-input {}
+    th .form-check-input { margin-top: 0; }
+    .bulk-actions-bar { padding: 0.75rem 1rem; background-color: #f8f9fa; border-bottom: 1px solid #dee2e6; border-top: 1px solid #dee2e6; margin-bottom: 1rem; display: none; }
+    /* DataTables Control Styling */
+    div.dataTables_wrapper div.dataTables_length select { border-radius:0.375rem;padding:0.375rem .75rem;border:1px solid #ced4da;background-color:#fff;background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right .75rem center;background-size:16px 12px;appearance:none;min-width:80px;margin-left:.5em;margin-right:.5em }
+    div.dataTables_wrapper div.dataTables_filter input { border-radius:0.375rem;padding:0.375rem .75rem;border:1px solid #ced4da;background-color:#fff;margin-left:.5em }
+    div.dataTables_wrapper div.dataTables_length label, div.dataTables_wrapper div.dataTables_filter label { font-weight:500;margin-bottom:0;display:flex;align-items:center }
+    div.dataTables_wrapper div.dataTables_paginate .page-item .page-link { border-radius:0.375rem;margin:0 2px }
+    div.dataTables_wrapper div.dataTables_paginate .page-item.active .page-link { background-color:#0d6efd;border-color:#0d6efd }
+    table.dataTable thead .dt-select-checkbox, table.dataTable tbody .dt-select-checkbox { text-align: center; vertical-align: middle; }
+    .animal-details-trigger { cursor: pointer; color: #0d6efd; /* text-decoration: underline; */ font-weight: 500;} /* Removed underline, make it like a button */
+    .animal-details-trigger:hover { color: #0a58ca; text-decoration: underline; }
+    #animalDetailModal .modal-body img.modal-animal-img { max-width: 100%; height: auto; border-radius: .375rem; margin-bottom: 1rem; border: 1px solid #dee2e6;}
+    .gmaps-link-table i { color: #dc3545; }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="card shadow-sm custom-card-camera-alerts">
+        <div class="card-header d-flex flex-row align-items-center justify-content-between">
+            <h5 class="mb-0 d-flex align-items-center">
+                <i class="bi bi-camera-video-fill me-2 text-primary"></i>Camera Alert Log
+            </h5>
+        </div>
+        <div class="card-body p-3">
+            {% if alerts %}
+                <form method="post" action="{% url 'forest_officer_bulk_delete_camera_alerts' %}" id="bulk-delete-form">
+                    {% csrf_token %}
+                    <div class="bulk-actions-bar my-2" id="bulk-actions-container">
+                        <button type="submit" class="btn btn-danger rounded-pill shadow-sm" id="delete-selected-button"
+                                onclick="return confirm('Are you sure you want to delete the selected alerts? This action cannot be undone.');" disabled>
+                            <i class="bi bi-trash3-fill me-1"></i>Delete Selected (<span id="selected-count">0</span>)
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped" id="cameraAlertsTable" style="width:100%;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="dt-select-checkbox no-sort" style="width: 30px;">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="select-all">
+                                            <label class="form-check-label" for="select-all"></label>
+                                        </div>
+                                    </th>
+                                    <th>Date & Time</th>
+                                    <th>Animal Detected</th>
+                                    <th>Camera ID & Location</th>
+                                    <th>Alert Image</th>
+                                    <th class="text-center no-sort" style="width: 100px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alert in alerts %}
+                                <tr data-alert-id="{{ alert.id }}">
+                                    <td class="dt-select-checkbox">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="selected_alerts" value="{{ alert.id }}" class="form-check-input alert-checkbox" id="checkbox-alert-{{alert.id}}">
+                                            <label class="form-check-label" for="checkbox-alert-{{alert.id}}"></label>
+                                        </div>
+                                    </td>
+                                    <td data-sort="{{ alert.date|date:"Ymd" }}{{ alert.time|date:"His" }}"> {# Sortable format YYYYMMDDHHMMSS #}
+                                        {{ alert.date|date:"M d, Y" }}<br><small class="text-muted">{{ alert.time|time:"h:i A" }}</small>
+                                    </td>
+                                    <td>
+                                        {{ alert.ANIMAL.name }}<br>
+                                        <a href="#" class="animal-details-trigger small"
+                                           data-bs-toggle="modal" data-bs-target="#animalDetailModal"
+                                           data-animal-name="{{ alert.ANIMAL.name }}"
+                                           data-animal-type="{{ alert.ANIMAL.type|default:'N/A' }}"
+                                           data-animal-details="{{ alert.ANIMAL.details|escape }}"
+                                           data-animal-image-url="{% if alert.ANIMAL.image %}{{ alert.ANIMAL.image.url }}{% else %}{% static 'path/to/your/placeholder_animal_image.png' %}{% endif %}"> {# Added placeholder for animal image in data attribute #}
+                                            <i class="bi bi-info-circle-fill"></i> View Details
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if alert.CAMERA %}
+                                            Camera {{ alert.CAMERA.camera_id }}
+                                            {% if alert.CAMERA.latitude and alert.CAMERA.longitude %}
+                                                <br>
+                                                <a href="https://www.google.com/maps?q={{ alert.CAMERA.latitude }},{{ alert.CAMERA.longitude }}"
+                                                target="_blank" class="small gmaps-link-table"
+                                                data-bs-toggle="tooltip" title="View camera location on Google Maps">
+                                                    <i class="bi bi-geo-alt-fill"></i> Map
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted fst-italic">N/A</span>
+                                        {% endif %}                                            
+                                    </td>
+                                    <td>
+                                        {% if alert.image and alert.image.url %}
+                                            <a href="{{ alert.image.url }}" target="_blank" data-bs-toggle="tooltip" title="View alert image for {{ alert.ANIMAL.name }}">
+                                                <img src="{{ alert.image.url }}" alt="Alert Image: {{ alert.ANIMAL.name }}" class="alert-image-preview">
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted fst-italic">No Alert Image</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'forest_officer_edit_camera_alerts' id=alert.id %}" class="btn btn-sm btn-outline-warning rounded-pill" data-bs-toggle="tooltip" title="Edit Alert Details">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </a>
+                                            <form action="{% url 'forest_officer_delete_camera_alerts' id=alert.id %}" method="post" style="display:inline;" class="ms-1">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" data-bs-toggle="tooltip" title="Delete This Alert"
+                                                        onclick="return confirm('Delete alert for {{ alert.ANIMAL.name }} at {{ alert.CAMERA }}?');">
+                                                    <i class="bi bi-trash3-fill"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+            {% else %}
+                <div class="alert alert-info text-center m-3 rounded-3 shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>No camera alerts found for your station.
+                </div>
+            {% endif %}
+        </div>
+        {% if alerts %}
+        <div class="card-footer text-end">
+            <span class="text-muted small">Total Alerts: {{ alerts|length }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+     <div class="back-to-dashboard-container mt-3">
+        <a href="{% url 'forest_officer_home' %}" class="btn btn-outline-primary rounded-pill shadow-sm">
+            <i class="bi bi-arrow-left-circle-fill me-2"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Animal Details Modal -->
+<div class="modal fade" id="animalDetailModal" tabindex="-1" aria-labelledby="animalDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered"> {# Added modal-dialog-centered #}
+    <div class="modal-content rounded-3 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="animalDetailModalLabel"><i class="bi bi-info-square-fill me-2"></i>Animal Information</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <img src="#" id="modalAnimalImage" alt="Animal Image" class="modal-animal-img img-fluid mb-3">
+                <h4 id="modalAnimalName" class="mb-1"></h4>
+                <p class="text-muted mb-2"><strong class="text-dark">Type:</strong> <span id="modalAnimalType"></span></p>
+            </div>
+            <div class="col-md-8">
+                <h5>Details:</h5>
+                <p id="modalAnimalDetails" style="white-space: pre-wrap; max-height: 300px; overflow-y: auto;"></p> {# Added max-height and scroll #}
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">Close</button> {# Changed to outline #}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/select/1.7.0/js/dataTables.select.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    var table = $('#cameraAlertsTable').DataTable({
+        "order": [[ 1, "desc" ]],
+        "pageLength": 10,
+        "language": { "lengthMenu":"Show _MENU_ alerts", "zeroRecords":"No alerts", "info":"Page _PAGE_ of _PAGES_ (_TOTAL_ alerts)", "infoEmpty":"No alerts", "infoFiltered":"(from _MAX_)", "search":"", "searchPlaceholder":"Search alerts..." },
+        "responsive": true,
+        "columnDefs": [
+            { "orderable": false, "className": 'dt-select-checkbox no-sort', "targets": 0 },
+            { "orderable": false, "targets": -1 }
+        ],
+        "select": { "style": 'multi', "selector": 'td:first-child input.alert-checkbox' },
+        "dom": "<'row mb-3 align-items-center'<'col-sm-12 col-md-auto me-auto'l><'col-sm-12 col-md-auto ms-md-auto'f>>" + "<'row'<'col-sm-12'tr>>" + "<'row mt-3 align-items-center'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7 d-flex justify-content-md-end'p>>",
+    });
+
+    $('div.dataTables_filter input').addClass('form-control form-control-sm').attr('placeholder', 'Search alerts...');
+    $('div.dataTables_length select').addClass('form-select form-select-sm');
+
+    const selectAllCheckbox = document.getElementById('select-all');
+    const bulkActionsContainer = document.getElementById('bulk-actions-container');
+    const deleteSelectedButton = document.getElementById('delete-selected-button');
+    const selectedCountSpan = document.getElementById('selected-count');
+
+    function updateBulkActionsState() {
+        const count = table.rows({ selected: true, search: 'applied' }).count(); // Use DT API for count
+        selectedCountSpan.textContent = count;
+        if (count > 0) {
+            bulkActionsContainer.style.display = 'block'; deleteSelectedButton.disabled = false;
+        } else {
+            bulkActionsContainer.style.display = 'none'; deleteSelectedButton.disabled = true;
+        }
+    }
+
+    selectAllCheckbox.addEventListener('change', function(e) {
+        if (this.checked) { table.rows({ search: 'applied' }).select(); } 
+        else { table.rows({ search: 'applied' }).deselect(); }
+    });
+
+    table.on('select deselect search.dt', function(e, dt, type, indexes) {
+        updateBulkActionsState();
+        // Sync visual state of checkboxes on the current page
+        $('#cameraAlertsTable tbody .alert-checkbox').each(function() {
+            var row = table.row($(this).closest('tr'));
+            this.checked = row.selected();
+        });
+        
+        let totalRowsInCurrentView = table.rows({ page: 'current', search: 'applied' }).count();
+        let selectedInCurrentView = table.rows({ selected: true, page: 'current', search: 'applied' }).count();
+
+        if (totalRowsInCurrentView > 0 && selectedInCurrentView === totalRowsInCurrentView) {
+            selectAllCheckbox.checked = true; selectAllCheckbox.indeterminate = false;
+        } else if (selectedInCurrentView > 0) {
+            selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = true;
+        } else {
+            selectAllCheckbox.checked = false; selectAllCheckbox.indeterminate = false;
+        }
+    });
+    
+    // Initial UI update after DataTables is fully initialized
+    table.on('draw.dt', function () {
+        updateBulkActionsState(); // Ensure state is correct after redraws (paging, search)
+         // Re-sync checkboxes after draw, crucial for paging
+        $('#cameraAlertsTable tbody .alert-checkbox').each(function() {
+            var row = table.row($(this).closest('tr'));
+            this.checked = row.selected();
+        });
+    });
+    updateBulkActionsState(); // Initial call
+
+    // --- Animal Details Modal JS ---
+    const animalDetailModalEl = document.getElementById('animalDetailModal');
+    const modalAnimalName = document.getElementById('modalAnimalName');
+    const modalAnimalType = document.getElementById('modalAnimalType');
+    const modalAnimalDetails = document.getElementById('modalAnimalDetails');
+    const modalAnimalImage = document.getElementById('modalAnimalImage');
+    const placeholderAnimalImage = "{% static 'path/to/your/placeholder_animal_image.png' %}"; // CHANGE THIS PATH
+
+    animalDetailModalEl.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        const button = event.relatedTarget;
+        // Extract info from data-bs-* attributes (Bootstrap 5 prefers data-bs-*)
+        // but we used data-* for simplicity, which is fine.
+        modalAnimalName.textContent = button.dataset.animalName || 'N/A';
+        modalAnimalType.textContent = button.dataset.animalType || 'N/A';
+        modalAnimalDetails.textContent = button.dataset.animalDetails || 'No details provided.';
+        
+        const imageUrl = button.dataset.animalImageUrl;
+        if (imageUrl && imageUrl !== "None" && imageUrl !== "" && !imageUrl.endsWith('placeholder_animal_image.png')) { // Check against placeholder
+            modalAnimalImage.src = imageUrl;
+            modalAnimalImage.alt = button.dataset.animalName + " image";
+        } else {
+            modalAnimalImage.src = placeholderAnimalImage;
+            modalAnimalImage.alt = "Placeholder Animal Image";
+        }
+    });
+    // Ensure modal content is cleared or reset if needed when hidden, though re-populating on show is usually enough.
+    // animalDetailModalEl.addEventListener('hidden.bs.modal', function (event) {
+    //    // Reset content if you want to be extra sure
+    //    modalAnimalName.textContent = '';
+    //    modalAnimalType.textContent = '';
+    //    modalAnimalDetails.textContent = '';
+    //    modalAnimalImage.src = placeholderAnimalImage;
+    // });
+
+
+    // Initialize Bootstrap Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+});
+</script>
+{% endblock extra_scripts %}

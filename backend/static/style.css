@@ -1,0 +1,714 @@
+/* --- Base & Variables --- */
+:root {
+    --light-blue: #00FFFF;
+    --forest-green: #1A4D2E;
+    --moss-green: #8FBC8F; /* Lighter interaction green */
+    --earthy-brown: #5C4033;
+    --charcoal-gray: #36454F;
+    --off-white: #F8F8F2;
+    --accent-ambery: #B8860B; /* Desaturated Gold */
+    --accent-amber: #ffa700;
+    --bg-gradient-start: #0a1f11; /* Deep dark green/blue for bottom */
+    --bg-gradient-end: #2c5d3f; /* Softer green/brown for top */
+
+    --font-primary: 'Montserrat', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-primary);
+    background-color: var(--bg-gradient-start); /* Fallback */
+    color: var(--off-white);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden; /* Prevents scrollbars from background */
+    position: relative; /* Needed for absolute positioning of background */
+}
+
+/* --- Loading Screen --- */
+#loading-screen {
+    position: fixed; /* Keeps the loading screen on top */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #ffffff; /* Optional: Add a background color */
+    display: flex;
+    flex-direction: column; /* Stack image and text vertically */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensures it's on top of other content, but below message overlay */
+}
+
+#loading-screen img {
+    max-width: 200px; /* Adjust the size of your GIF as needed */
+}
+
+#loading-text {
+    color: #333; /* Adjust the color of the text */
+    margin-top: 10px; /* Add some space between the GIF and the text */
+    font-size: 1.2em; /* Adjust the font size of the text */
+}
+
+.dot {
+    display: inline-block;
+    width: 0.3em;
+    height: 0.3em;
+    border-radius: 50%;
+    background-color: #333;
+    margin: 0 0.15em;
+    animation: fadeInOut 1.5s infinite linear;
+    vertical-align: middle;
+}
+
+.dot:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+    animation-delay: 0.5s; /* Adjust delay for sequential effect */
+}
+
+.dot:nth-child(3) {
+    animation-delay: 1s;   /* Adjust delay for sequential effect */
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; } /* Start faded out */
+    50% { opacity: 1; } /* Fade in to full opacity */
+    100% { opacity: 0; } /* Fade back out */
+}
+
+/* --- Message Overlay Styles (New) --- */
+#message-overlay {
+    display: none; /* Hidden by default; JS will change to 'flex' when messages exist */
+    position: fixed; /* Stays on top, even when scrolling */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+    z-index: 1001; /* Higher than loading screen (1000) */
+    justify-content: center; /* Used with 'flex' display */
+    align-items: center; /* Used with 'flex' display */
+    backdrop-filter: blur(5px); /* Frosted glass effect for the background */
+    -webkit-backdrop-filter: blur(5px); /* For Safari compatibility */
+    opacity: 0; /* Hidden for initial fade-in animation, JS will set this */
+    transition: opacity 0.5s ease-out; /* Smooth fade for the overlay */
+}
+
+.message-modal-content {
+    background: rgba(10, 31, 17, 0.95); /* Slightly darker, less transparent than login box */
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 450px; /* Max width for message box */
+    width: 90%;
+    transform: translateY(-20px); /* Initial slight offset for animation */
+    opacity: 0; /* Hidden initially for animation */
+    animation: fadeInSlideIn 0.5s ease-out forwards; /* Controls appearance */
+}
+
+@keyframes fadeInSlideIn {
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* --- Django Messages Styling --- */
+.messages-container {
+    margin-bottom: 0; /* Remove default margin from the container as it's inside a modal now */
+    width: 100%; /* Ensure it takes full width of its parent */
+}
+
+.alert {
+    padding: 20px;
+    margin-bottom: 15px; /* Space between multiple alerts if they occur */
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 500;
+    display: flex; /* Use flexbox to align message and button */
+    flex-direction: column; /* Stack message text and button vertically */
+    align-items: center; /* Center horizontally */
+    gap: 15px; /* Space between message text and button */
+    opacity: 1; /* Default state for alerts */
+    transition: opacity 0.3s ease-out; /* For dismissal animation */
+}
+
+/* Specific alert styles (you can adjust colors to match your theme) */
+.alert-success {
+    color: #dff0d8; /* Light green text */
+    background-color: var(--forest-green); /* Dark green background */
+    border-color: #d6e9c6; /* Lighter green border */
+    box-shadow: 0 0 15px rgba(143, 188, 143, 0.3); /* Soft moss green glow */
+}
+
+.alert-error {
+    color: #f2dede; /* Light red text */
+    background-color: #a94442; /* Dark red background */
+    border-color: #ebccd1; /* Lighter red border */
+    box-shadow: 0 0 15px rgba(169, 68, 66, 0.3); /* Soft red glow */
+}
+
+.alert-warning {
+    color: #fcf8e3; /* Light yellow text */
+    background-color: #8a6d3b; /* Dark yellow/brown background */
+    border-color: #faebcc; /* Lighter yellow border */
+    box-shadow: 0 0 15px rgba(138, 109, 59, 0.3); /* Soft warning glow */
+}
+
+.alert-info {
+    color: #d9edf7; /* Light blue text */
+    background-color: #31708f; /* Dark blue background */
+    border-color: #bce8f1; /* Lighter blue border */
+    box-shadow: 0 0 15px rgba(49, 112, 143, 0.3); /* Soft info glow */
+}
+
+.alert-ok-button {
+    background-color: var(--moss-green);
+    color: var(--charcoal-gray); /* Dark text for button */
+    border: none;
+    padding: 10px 25px;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.alert-ok-button:hover {
+    background-color: #79a179; /* Slightly darker moss green */
+    transform: translateY(-1px);
+}
+
+.alert-ok-button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+
+/* --- Main Content Container (hidden until load/messages dismissed) --- */
+#content {
+    display: none; /* Keep hidden by default */
+    z-index: 0; /* Below loading screen and message overlay */
+    width: 100%;
+    height: 100%;
+    position: absolute; /* To properly contain animated background */
+}
+
+/* --- Animated Background --- */
+#animated-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* Behind everything */
+    overflow: hidden;
+}
+
+#gradient-bg {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, var(--bg-gradient-start), var(--bg-gradient-end));
+    animation: shiftGradient 45s ease infinite alternate;
+}
+
+@keyframes shiftGradient {
+    0% { background: linear-gradient(to top, #0a1f11, #2c5d3f); }
+    50% { background: linear-gradient(to top, #102a1a, #3a6f4f); }
+    100% { background: linear-gradient(to top, #0d2516, #40785a); }
+}
+
+/* Style for the background video */
+#background-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the video covers the entire background */
+}
+
+@keyframes swayCanopy {
+    from { transform: rotate(-0.5deg) translateX(-2px); }
+    to { transform: rotate(0.5deg) translateX(2px); }
+}
+
+/* CSS Particle Approximation (Limited) */
+#particles-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow clicks through */
+}
+
+.particle {
+    position: absolute;
+    bottom: -10px; /* Start below screen */
+    width: 4px;
+    height: 4px;
+    background-color: var(--accent-amber);
+    border-radius: 50%;
+    opacity: 0;
+    animation: drift 10s linear infinite;
+    filter: blur(1px); /* Soften edges */
+}
+
+/* Distribute particles and randomize animation delays/durations */
+.particle:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 12s; opacity: 0.4; width: 3px; height: 3px;}
+.particle:nth-child(2) { left: 25%; animation-delay: 2s; animation-duration: 9s; opacity: 0.6; width: 5px; height: 5px;}
+.particle:nth-child(3) { left: 40%; animation-delay: 5s; animation-duration: 15s; opacity: 0.3;}
+.particle:nth-child(4) { left: 55%; animation-delay: 1s; animation-duration: 8s; opacity: 0.5; width: 4px; height: 4px;}
+.particle:nth-child(5) { left: 70%; animation-delay: 7s; animation-duration: 11s; opacity: 0.4;}
+.particle:nth-child(6) { left: 85%; animation-delay: 3s; animation-duration: 13s; opacity: 0.6; width: 3px; height: 3px;}
+.particle:nth-child(7) { left: 5%; animation-delay: 6s; animation-duration: 10s; opacity: 0.5; }
+.particle:nth-child(8) { left: 95%; animation-delay: 4s; animation-duration: 14s; opacity: 0.4; }
+
+
+@keyframes drift {
+    0% {
+        transform: translateY(0) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: var(--opacity, 0.5); /* Use variable set per particle */
+    }
+    90% {
+        opacity: var(--opacity, 0.5);
+    }
+    100% {
+        transform: translateY(-110vh) translateX(calc(var(--drift-x, 0) * 10px)); /* Move up screen */
+        opacity: 0;
+    }
+    /* Add slight horizontal drift */
+    50% { transform: translateY(-55vh) translateX(calc(var(--drift-x, 3) * 5px));}
+}
+
+/* --- Login Container & Form --- */
+#login-container {
+    background: rgba(10, 31, 17, 0.7); /* Semi-transparent dark green */
+    padding: 40px 50px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    position: relative;
+    z-index: 1; /* Below loading screen and message overlay */
+    width: 90%;
+    max-width: 420px; /* Max width */
+    backdrop-filter: blur(5px); /* Frosted glass effect */
+}
+
+#login-form h2 .highlight-eye {
+    color: var(--moss-green);
+    animation: eyePulse 3s ease-in-out infinite; /* Apply the animation */
+}
+
+@keyframes eyePulse {
+    0%, 100% { text-shadow: 0 0 2px var(--forest-green); }
+    50% { text-shadow: 0 0 10px var(--forest-green); } /* Brighter pulse */
+    90% { text-shadow: 0 0 2px var(--light-blue); }
+}
+
+#logo-container {
+    margin-bottom: -20px;
+    opacity: 0; /* Start hidden */
+    transform: scale(0.5) rotate(-20deg); /* Start smaller and slightly rotated */
+    animation: magnifyingGlassRevealGrowRotate 1.2s 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+#logo {
+    max-width: 150px; /* Adjust size */
+    height: auto;
+    animation: logoPulse 3s ease-in-out infinite;
+    animation-play-state: paused; /* Start paused */
+}
+
+@keyframes magnifyingGlassRevealGrowRotate {
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg); /* Grow to full size and no rotation */
+    }
+}
+
+/* Additional class applied via JS after reveal finishes */
+#logo.pulse-active {
+    animation-play-state: running;
+}
+
+@keyframes logoPulse {
+    0%, 100% { filter: drop-shadow(0 0 2px var(--light-blue)); }
+    40% { filter: drop-shadow(0 0 10px var(--accent-amber)); } /* Brighter pulse */
+    80% { filter: drop-shadow(0 0 2px var(--light-blue)); }
+}
+
+h1 {
+    font-size: 1.8em;
+    margin-bottom: 25px;
+    color: var(--off-white);
+    font-weight: 500;
+}
+
+.input-group {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.input-group label {
+    position: absolute;
+    top: 15px;
+    left: 0;
+    color: rgba(248, 248, 242, 0.6); /* Dimmed off-white */
+    pointer-events: none;
+    transition: all 0.3s ease;
+    font-size: 1em;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 15px 0 10px; /* Padding bottom creates space for underline */
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(248, 248, 242, 0.3);
+    color: var(--off-white);
+    font-size: 1em;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+/* Input Focus/Active State */
+.input-group input:focus,
+.input-group input:valid /* Keep label up if input has value */ {
+    border-bottom-color: var(--moss-green); /* Highlight border */
+}
+
+.input-group input:focus + label,
+.input-group input:valid + label {
+    top: -17px; /* Move label up */
+    font-size: 0.75em;
+    color: var(--moss-green); /* Highlight label */
+}
+
+/* Password Toggle Icon */
+.password-group {
+    position: relative;
+}
+.toggle-password {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%); /* Vertically center */
+    cursor: pointer;
+    color: rgba(248, 248, 242, 0.6);
+    font-size: 1.1em;
+    transition: color 0.3s ease;
+    padding: 5px; /* Increase clickable area */
+}
+.toggle-password:hover {
+    color: var(--moss-green);
+}
+
+/* --- Form Options --- */
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    font-size: 0.9em;
+}
+
+/* Custom Checkbox */
+.remember-me {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.remember-me input[type="checkbox"] {
+    opacity: 0; /* Hide default */
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.remember-me label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: rgba(248, 248, 242, 0.8);
+}
+
+.checkmark {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(248, 248, 242, 0.5);
+    border-radius: 4px;
+    margin-right: 8px;
+    position: relative;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.checkmark::after { /* The checkmark symbol */
+    content: "";
+    position: absolute;
+    display: none; /* Hidden initially */
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--off-white);
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+.remember-me input[type="checkbox"]:checked + label .checkmark {
+    background-color: var(--moss-green);
+    border-color: var(--moss-green);
+}
+
+.remember-me input[type="checkbox"]:checked + label .checkmark::after {
+    display: block; /* Show checkmark */
+}
+
+.remember-me input[type="checkbox"]:focus + label .checkmark {
+     box-shadow: 0 0 5px var(--moss-green); /* Focus outline */
+}
+
+/* Forgot Password Link */
+#forgot-password {
+    color: rgba(248, 248, 242, 0.8);
+    text-decoration: none;
+    position: relative;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+#forgot-password::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 1px;
+    bottom: -3px;
+    left: 0;
+    background-color: var(--accent-amber);
+    transform: scaleX(0);
+    transform-origin: bottom right;
+    transition: transform 0.3s ease-out;
+}
+
+#forgot-password:hover {
+    color: var(--off-white);
+    transform: translateY(-2px); /* Slight lift */
+}
+
+#forgot-password:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+
+/* --- Login Button --- */
+#login-button {
+    width: 100%;
+    padding: 15px;
+    background-color: var(--forest-green);
+    border: none;
+    border-radius: 8px;
+    color: var(--off-white);
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden; /* Contain pseudo-elements/indicator */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+#login-button::before { /* Hover overlay */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--moss-green);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 0;
+}
+
+#login-button:hover::before {
+    opacity: 0.2; /* Subtle green overlay */
+}
+
+#login-button:hover {
+    background-color: var(--forest-green); /* Base color stays */
+    box-shadow: 0 6px 20px rgba(143, 188, 143, 0.4); /* Moss green glow */
+    /* Optional pulse effect */
+    /* animation: buttonPulse 1.5s infinite ease-in-out; */
+}
+
+@keyframes buttonPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+}
+
+
+#login-button .button-text {
+    position: relative;
+    z-index: 1;
+    transition: opacity 0.2s ease;
+}
+
+#login-button:active {
+    transform: scale(0.98); /* Click feedback */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+
+/* Loading State */
+#login-button.loading .button-text {
+    opacity: 0;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    margin-top: -12px;
+    border: 3px solid rgba(248, 248, 242, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--accent-amber); /* The moving part */
+    opacity: 0; /* Hidden initially */
+    animation: spin 1s linear infinite;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+}
+
+#login-button.loading .loading-indicator {
+    opacity: 1;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* --- Forgot Password Modal --- */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 100; /* Below loading screen and message overlay */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 0; /* Start hidden for fade-in */
+    transition: opacity 0.4s ease;
+    backdrop-filter: blur(3px);
+}
+
+.modal.show {
+    display: flex; /* Use flex to center content */
+    justify-content: center;
+    align-items: center;
+    opacity: 1; /* Fade in */
+}
+
+.modal-content {
+    background-color: var(--forest-green);
+    margin: auto;
+    padding: 30px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 450px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    text-align: center;
+    transform: scale(0.95); /* Start slightly smaller */
+    transition: transform 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); /* Ease out back */
+}
+
+.modal.show .modal-content {
+    transform: scale(1); /* Scale in */
+}
+
+
+.modal h2 {
+    color: var(--off-white);
+    margin-bottom: 15px;
+}
+
+.modal p {
+    color: rgba(248, 248, 242, 0.8);
+    margin-bottom: 20px;
+    font-size: 0.9em;
+}
+
+/* Changed input type from email to text for consistency with HTML, and added name */
+.modal input[type="text"] {
+     width: 100%;
+     padding: 12px;
+     margin-bottom: 20px;
+     border: 1px solid rgba(248, 248, 242, 0.4);
+     border-radius: 5px;
+     background-color: rgba(255, 255, 255, 0.1);
+     color: var(--off-white);
+     font-size: 1em;
+}
+.modal input[type="text"]::placeholder {
+    color: rgba(248, 248, 242, 0.6);
+}
+.modal input[type="text"]:focus {
+    outline: none;
+    border-color: var(--moss-green);
+    box-shadow: 0 0 5px var(--moss-green);
+}
+
+
+.modal button {
+    padding: 12px 25px;
+    background-color: var(--moss-green);
+    border: none;
+    border-radius: 5px;
+    color: var(--charcoal-gray);
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.modal button:hover {
+    /* Using a fixed color here instead of darken() as darken is typically a preprocessor function */
+    background-color: #79a179; 
+}
+
+.close-modal {
+    color: rgba(248, 248, 242, 0.5);
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: var(--off-white);
+}

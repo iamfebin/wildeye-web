@@ -1,0 +1,313 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}{{ officer.first_name|default:"Officer" }}'s Profile - WildEye Officer{% endblock title %}
+
+{% block page_title %}Officer Profile{% endblock page_title %}
+
+{% block extra_head %}
+    <style>
+        .profile-page-card {
+            border: none; /* Remove default card border for a cleaner look */
+            border-radius: 0.75rem; /* Softer corners */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            overflow: hidden; /* Important for rounded corners with header */
+        }
+
+        .profile-card-header-bg {
+            /* background: linear-gradient(135deg, #198754 0%, #28a745 100%); /* Green gradient */
+            background-color: #198754; /* Solid green if gradient is too much */
+            color: white;
+            padding: 2rem 1.5rem;
+            position: relative;
+            /* border-bottom: 5px solid #20c997; /* Accent border */
+        }
+        .profile-card-header-bg h3 {
+            font-weight: 600;
+        }
+
+        .profile-image-wrapper {
+            margin-top: -26px; /* Pull image up to overlap header */
+            position: relative; /* For z-index if needed */
+            z-index: 10;
+        }
+
+        .profile-image-xl {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border: 5px solid white; /* White border to separate from header */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-image-placeholder-xl {
+            width: 150px;
+            height: 150px;
+            background-color: #e9ecef;
+            border: 5px solid white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-image-placeholder-xl svg {
+            width: 5rem;
+            height: 5rem;
+            color: #6c757d;
+        }
+
+        .profile-info-header {
+            margin-top: 0.5rem;
+        }
+        .profile-info-header .officer-name {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #2c5234; /* Darker green for name */
+        }
+        .profile-info-header .officer-username {
+            color: #555;
+            font-size: 0.9rem;
+        }
+        .profile-info-header .officer-station {
+            color: #777;
+            font-size: 0.85rem;
+        }
+
+        .profile-details-section {
+            padding-top: 1.5rem;
+        }
+
+        .profile-details-section dt {
+            color: #495057; /* Slightly darker muted text */
+            font-weight: 500; /* medium */
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        .profile-details-section dd {
+            color: #212529; /* Standard text color */
+            font-size: 1rem;
+            margin-bottom: 1.25rem; /* More space between items */
+            padding-left: 0.5rem;
+            border-left: 3px solid #28a745; /* Green accent line */
+        }
+        .profile-details-section dd:last-child {
+            margin-bottom: 0;
+        }
+
+        .profile-actions {
+            padding-top: 1.5rem;
+            border-top: 1px solid #dee2e6; /* Separator line */
+            margin-top: 1.5rem;
+        }
+        .btn-edit-profile {
+            /* background-color: #28a745; */ /* Using Bootstrap's .btn-success for consistency */
+            /* border-color: #28a745; */
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        .btn-back-dashboard {
+            /* Styles for back button if needed, e.g., outline */
+             padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+
+        /* Message styling */
+        .profile-messages .alert {
+            border-left-width: 4px;
+        }
+    </style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-7 col-lg-9 col-md-11">
+        <div class="card profile-page-card">
+            <div class="profile-card-header-bg text-center">
+                <h3 class="mb-0">Officer Profile Details</h3>
+            </div>
+
+            <div class="card-body pt-0">
+                <div class="text-center profile-image-wrapper">
+                    {% if officer.image and officer.image.url %}
+                        <img src="{{ officer.image.url }}" alt="{{ officer.first_name }}'s profile picture"
+                             class="rounded-circle profile-image-xl">
+                    {% else %}
+                        <div class="rounded-circle profile-image-placeholder-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="text-center profile-info-header mt-3 pb-4">
+                    <h4 class="officer-name mb-1">{{ officer.first_name }} {{ officer.last_name }}</h4>
+                    <p class="officer-username mb-1">@{{ officer.LOGIN.username }}</p>
+                    {% if officer.STATION %}
+                    <p class="officer-station"><i class="bi bi-geo-alt-fill me-1 text-success"></i>Station: {{ officer.STATION.name }}</p>
+                    {% endif %}
+                </div>
+
+                {% if messages %}
+                <div class="px-md-4 profile-messages">
+                    {% for message in messages %}
+                        <div class="alert alert-dismissible fade show my-3
+                            {% if message.tags == 'success' %} alert-success border-success {% endif %}
+                            {% if message.tags == 'error' %} alert-danger border-danger {% endif %}
+                            {% if message.tags == 'warning' %} alert-warning border-warning {% endif %}
+                            {% if message.tags == 'info' %} alert-info border-info {% else %} alert-secondary border-secondary {% endif %}"
+                            role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="profile-details-section px-md-4">
+                    <dl class="row">
+                        <div class="col-md-6">
+                            <dt>Full Name</dt>
+                            <dd>{{ officer.first_name }} {{ officer.last_name }}</dd>
+
+                            <dt>Email Address</dt>
+                            <dd>{{ officer.email }}</dd>
+
+                            <dt>Phone Number</dt>
+                            <dd>{{ officer.phone }}</dd>
+                        </div>
+                        <div class="col-md-6">
+                            <dt>Address</dt>
+                            <dd>{{ officer.address|default:"Not provided" }}</dd>
+
+                            <dt>Date of Birth</dt>
+                            <dd>{{ officer.dob|date:"F d, Y"|default:"Not provided" }}</dd>
+
+                            <dt>Login Username</dt>
+                            <dd>{{ officer.LOGIN.username }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="profile-actions px-md-4 pb-4 text-center text-md-end">
+                    <a href="{% url 'edit_officer_profile' %}" class="btn btn-success btn-edit-profile mb-2 mb-md-0 me-md-2">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                    </a>
+                    <a href="{% url 'forest_officer_home' %}" class="btn btn-outline-secondary btn-back-dashboard">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+    {# No page-specific scripts needed for this view based on the original #}
+{% endblock extra_scripts %}
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"Officer Profile" }} - Forest Guard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* You can add any additional global styles here if needed */
+        body {
+            font-family: 'Inter', sans-serif; /* Example font, Tailwind uses a sans-serif stack by default */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white shadow-xl rounded-lg overflow-hidden md:max-w-2xl mx-auto">
+            <div class="bg-green-700 p-4 sm:p-6">
+                <h1 class="text-2xl sm:text-3xl font-bold text-white text-center">{{ officer.first_name }} {{ officer.last_name }}'s Profile</h1>
+            </div>
+
+            {% if messages %}
+                <div class="p-4">
+                    {% for message in messages %}
+                        <div class="p-3 rounded-md text-sm my-2
+                            {% if message.tags == 'success' %} bg-green-100 text-green-700 {% endif %}
+                            {% if message.tags == 'error' %} bg-red-100 text-red-700 {% endif %}
+                            {% if message.tags == 'warning' %} bg-yellow-100 text-yellow-700 {% endif %}
+                            {% if message.tags == 'info' %} bg-blue-100 text-blue-700 {% endif %}"
+                            role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex flex-col items-center md:flex-row md:items-start md:space-x-6">
+                    <div class="flex-shrink-0 mb-4 md:mb-0">
+                        {% if officer.image and officer.image.url %}
+                            <img src="{{ officer.image.url }}" alt="{{ officer.first_name }}'s profile picture"
+                                 class="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-green-500 shadow-md">
+                        {% else %}
+                            <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gray-300 flex items-center justify-center text-gray-500 text-4xl border-4 border-gray-400 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="w-full text-center md:text-left">
+                        <h2 class="text-xl font-semibold text-green-800">{{ officer.first_name }} {{ officer.last_name }}</h2>
+                        <p class="text-gray-600">@{{ officer.LOGIN.username }}</p>
+                        {% if officer.STATION %}
+                        <p class="text-sm text-gray-500 mt-1">Station: {{ officer.STATION.name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-6 space-y-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Full Name</h3>
+                        <p class="mt-1 text-md text-gray-900">{{ officer.first_name }} {{ officer.last_name }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Email Address</h3>
+                        <p class="mt-1 text-md text-gray-900">{{ officer.email }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Phone Number</h3>
+                        <p class="mt-1 text-md text-gray-900">{{ officer.phone }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Address</h3>
+                        <p class="mt-1 text-md text-gray-900">{{ officer.address|default:"Not provided" }}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-gray-500">Date of Birth</h3>
+                        <p class="mt-1 text-md text-gray-900">{{ officer.dob|date:"F d, Y"|default:"Not provided" }}</p>
+                    </div>
+                     <div>
+                        <h3 class="text-sm font-medium text-gray-500">Login Username</h3>
+                        <p class="mt-1 text-md text-gray-900">{{ officer.LOGIN.username }}</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex flex-col sm:flex-row justify-center sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+                    <a href="{% url 'edit_officer_profile' %}" class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        Edit Profile
+                    </a>
+                    <a href="{% url 'forest_officer_home' %}" class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% load static %}
+    </body>
+</html> -->

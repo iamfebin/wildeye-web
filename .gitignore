@@ -1,0 +1,41 @@
+# Environment variables (Secrets)
+.env
+.env.*
+!.env.example
+
+# Python virtual environments & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Tooling, Linters & Security scans
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+bandit_out.txt
+
+# Media & Uploaded Files
+backend/media/
+media/
+*.log
+
+# Database artifacts
+*.sqlite3
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+

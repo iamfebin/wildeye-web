@@ -1,0 +1,347 @@
+{% extends "Admin/admin_base.html" %}
+
+{% block title %}Admin Add Forest Division{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    .form-content-wrapper {
+        background-color: #ffffff;
+        padding: 30px 40px; /* Increased padding */
+        margin-top: 20px;
+        border-radius: 12px; /* More rounded corners */
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1); /* Enhanced shadow */
+        transition: all 0.3s ease-in-out;
+    }
+
+    .form-content-wrapper:hover {
+        box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+    }
+
+    .styled-form-table {
+        width: 100%;
+        border-collapse: separate; /* Allows for border-spacing */
+        border-spacing: 0 15px; /* Vertical spacing between rows */
+        margin-top: 10px;
+    }
+
+    .styled-form-table td {
+        padding: 10px;
+        border-bottom: none; /* Removed individual row borders for cleaner look with spacing */
+        vertical-align: middle; /* Align content vertically */
+    }
+
+    .styled-form-table td:first-child {
+        font-weight: 600;
+        color: #343a40; /* Darker, more professional label color */
+        width: 25%;
+        min-width: 150px;
+        text-align: left;
+        padding-right: 20px;
+    }
+
+    .input-group {
+        position: relative;
+        display: flex;
+        flex-direction: column; /* Stack input and message */
+    }
+
+    .styled-form-table input[type="text"] {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 8px; /* More rounded inputs */
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1em;
+        color: #495057;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .styled-form-table input[type="text"]:focus {
+        border-color: #007bff; /* Primary color for focus */
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .styled-form-table input[type="text"].invalid {
+        border-color: #dc3545; /* Red for invalid */
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    .styled-form-table input[type="text"].valid {
+        border-color: #28a745; /* Green for valid */
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+
+    .styled-form-table input[type="submit"] {
+        background-image: linear-gradient(to right, #1d9403, #23b003); /* Gradient green */
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.05em;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(29, 148, 3, 0.2);
+    }
+
+    .styled-form-table input[type="submit"]:hover {
+        background-image: linear-gradient(to right, #167202, #1a8a02);
+        box-shadow: 0 6px 20px rgba(29, 148, 3, 0.3);
+        transform: translateY(-2px);
+    }
+     .styled-form-table input[type="submit"]:active {
+        transform: translateY(0px);
+        box-shadow: 0 2px 10px rgba(29, 148, 3, 0.2);
+    }
+     .styled-form-table input[type="submit"]:disabled {
+        background-image: none;
+        background-color: #adb5bd;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+
+    .submit-cell {
+        text-align: left; /* Align button to the left */
+        padding-top: 20px !important;
+    }
+
+    .validation-message {
+        font-size: 0.875em; /* Slightly larger validation text */
+        margin-top: 8px;
+        display: block;
+        height: 1.2em; /* Reserve space to prevent layout shift */
+        font-weight: 500;
+    }
+    .validation-message.error {
+        color: #dc3545;
+    }
+    .validation-message.success {
+        color: #28a745;
+    }
+    .validation-message.checking {
+        color: #007bff;
+    }
+    .page-header {
+        margin-bottom: 25px;
+        color: #333;
+        font-size: 1.8em; /* Match top-bar h1 or make distinct */
+        font-weight: 600;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div id="top-bar">
+        <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <h1>Add New Forest Division</h1>
+    </div>
+
+    <div class="form-content-wrapper">
+        {# <h2 class="page-header">Division Details</h2> #} {# Optional: if you want a sub-header inside the card #}
+        <form id="addDivisionForm" name="addDivisionForm" method="post" action="{% url 'admin_add_forest_divition_post' %}">
+          {% csrf_token %}
+          <table class="styled-form-table">
+            <tr>
+              <td><label for="divisionName">Division Name</label></td>
+              <td>
+                <div class="input-group">
+                  <input type="text" name="name" id="divisionName" value="{{ form_data.name|default:'' }}" required autocomplete="off"/>                    <span id="nameValidationMessage" class="validation-message"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><label for="divisionPlace">Place</label></td>
+              <td>
+                <div class="input-group">
+                  <input type="text" name="place" id="divisionPlace" value="{{ form_data.place|default:'' }}" required autocomplete="off"/>                    <span id="placeValidationMessage" class="validation-message"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td></td> {# Empty cell for alignment #}
+              <td class="submit-cell">
+                  <input type="submit" id="submitButton" value="Add Division" />
+              </td>
+            </tr>
+          </table>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("DOM Content Loaded. Initializing ADD script (place no numbers, non-unique informative check)...");
+
+    const divisionNameInput = document.getElementById('divisionName');
+    const nameValidationMessage = document.getElementById('nameValidationMessage');
+    const divisionPlaceInput = document.getElementById('divisionPlace');
+    const placeValidationMessage = document.getElementById('placeValidationMessage');
+    const addDivisionForm = document.getElementById('addDivisionForm');
+
+    if (!divisionNameInput || !nameValidationMessage || !divisionPlaceInput || !placeValidationMessage || !addDivisionForm) {
+        console.error("ADD Script: One or more essential form elements are missing!");
+        return;
+    }
+    console.log("ADD Script: All essential form elements found.");
+
+    let nameDebounceTimer;
+    let isDivisionNameFormatValid = false;
+    let isDivisionNameAvailable = false;
+
+    let placeDebounceTimer;
+    let isPlaceFormatValid = false;
+    // isPlaceAvailable flag is not used to block submission, AJAX is for info only.
+
+    function updateValidationMessage(element, message, type) {
+        if (!element) { console.warn("updateValidationMessage: null element."); return; }
+        element.textContent = message;
+        element.className = 'validation-message ' + type;
+    }
+
+    function setInputValidity(inputElement, isValid, isInfo = false) {
+        if (!inputElement) { console.warn("setInputValidity: null inputElement."); return; }
+        inputElement.classList.remove('valid', 'invalid', 'info-input');
+        if (isInfo) {
+            inputElement.classList.add('info-input'); // For info style
+        } else if (isValid === true) {
+            inputElement.classList.add('valid');
+        } else if (isValid === false) {
+            inputElement.classList.add('invalid');
+        }
+    }
+
+    const divisionNameRegex = /^\s*([\w\s'-]+?)\s+(Division)(\s+[\w\s'-]*)?\s*$/i;
+    const hasNumberRegex = /\d/; // Regex to check for any digit
+
+    function validateNameFormatOnly(name) {
+        console.log(`ADD Name Format: "${name}"`);
+        if (name.length === 0) { updateValidationMessage(nameValidationMessage, 'Name is required.', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return false; }
+        if (name.length < 3) { updateValidationMessage(nameValidationMessage, 'Name must be at least 3 characters.', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return false; }
+        if (!divisionNameRegex.test(name)) { updateValidationMessage(nameValidationMessage, 'Format: "Name Division OptionalSuffix".', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return false; }
+        console.log("ADD Name Format: Valid."); isDivisionNameFormatValid = true; return true;
+    }
+
+    function checkNameAvailability(name) {
+        const standardizedName = name.replace(/division/i, 'Division');
+        console.log(`ADD Name Availability: "${standardizedName}"`);
+        updateValidationMessage(nameValidationMessage, 'Checking availability...', 'checking');
+        setInputValidity(divisionNameInput, null);
+        isDivisionNameAvailable = false;
+
+        // *** MODIFIED LINE BELOW ***
+        fetch(`{% url 'admin_check_field_exists' %}?model_name=forest_division&field_name=name&field_value=${encodeURIComponent(standardizedName)}`)
+            .then(response => { if (!response.ok) throw new Error(`Network error: ${response.statusText}`); return response.json(); })
+            .then(data => {
+                console.log("ADD Name Check Response:", data);
+                if (data.error) { updateValidationMessage(nameValidationMessage, data.error, 'error'); setInputValidity(divisionNameInput, false); }
+                else if (data.exists) { updateValidationMessage(nameValidationMessage, 'This division name already exists.', 'error'); setInputValidity(divisionNameInput, false); }
+                else { updateValidationMessage(nameValidationMessage, 'Name is valid and available!', 'success'); setInputValidity(divisionNameInput, true); isDivisionNameAvailable = true; }
+            })
+            .catch(error => {
+                console.error('ADD Name Check Error:', error);
+                updateValidationMessage(nameValidationMessage, 'Could not check name. ' + error.message, 'error');
+                setInputValidity(divisionNameInput, false);
+            });
+    }
+
+    divisionNameInput.addEventListener('input', function () {
+        const name = divisionNameInput.value.trim();
+        console.log(`ADD Name Input: "${name}"`);
+        clearTimeout(nameDebounceTimer);
+        isDivisionNameAvailable = false; // Reset
+        if (!validateNameFormatOnly(name)) { setInputValidity(divisionNameInput, false); return; }
+        // An empty string that passes format (e.g. if regex allowed it) should still be invalid for submission
+        if (name === "") { updateValidationMessage(nameValidationMessage, 'Name is required.', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return; }
+        nameDebounceTimer = setTimeout(() => { checkNameAvailability(name); }, 700);
+    });
+
+    function validatePlaceFormatOnly(place) {
+        console.log(`ADD Place Format (no numbers): "${place}"`);
+        if (place.length === 0) { updateValidationMessage(placeValidationMessage, 'Place is required.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return false; }
+        if (place.length < 2) { updateValidationMessage(placeValidationMessage, 'Place must be at least 2 characters.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return false; }
+        if (hasNumberRegex.test(place)) { updateValidationMessage(placeValidationMessage, 'Place cannot contain numbers.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return false; }
+        console.log("ADD Place Format (no numbers): Valid."); isPlaceFormatValid = true; return true;
+    }
+
+    function checkPlaceExistenceInfo(place) {
+        console.log(`ADD Place Existence Info: "${place}"`);
+        updateValidationMessage(placeValidationMessage, 'Checking...', 'checking');
+        setInputValidity(divisionPlaceInput, null);
+
+        // *** MODIFIED LINE BELOW ***
+        fetch(`{% url 'admin_check_field_exists' %}?model_name=forest_division&field_name=place&field_value=${encodeURIComponent(place)}`)
+            .then(response => { if (!response.ok) throw new Error(`Network error: ${response.statusText}`); return response.json(); })
+            .then(data => {
+                console.log("ADD Place Check Response (Info):", data);
+                if (data.error) { updateValidationMessage(placeValidationMessage, data.error, 'error'); setInputValidity(divisionPlaceInput, false); }
+                else if (data.exists) { updateValidationMessage(placeValidationMessage, 'This place is already used. You can still add it.', 'info'); setInputValidity(divisionPlaceInput, true, true); }
+                else { updateValidationMessage(placeValidationMessage, 'Place is valid.', 'success'); setInputValidity(divisionPlaceInput, true); }
+            })
+            .catch(error => {
+                console.error('ADD Place Check Error (Info):', error);
+                updateValidationMessage(placeValidationMessage, 'Could not check place. ' + error.message, 'error');
+                setInputValidity(divisionPlaceInput, false);
+            });
+    }
+
+    divisionPlaceInput.addEventListener('input', function() {
+        const place = divisionPlaceInput.value.trim();
+        console.log(`ADD Place Input (no numbers): "${place}"`);
+        clearTimeout(placeDebounceTimer);
+        if (!validatePlaceFormatOnly(place)) {
+            setInputValidity(divisionPlaceInput, false); // Message already set by validatePlaceFormatOnly
+            return;
+        }
+        if (place === "") { updateValidationMessage(placeValidationMessage, 'Place is required.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return; }
+        placeDebounceTimer = setTimeout(() => { checkPlaceExistenceInfo(place); }, 700);
+    });
+
+    addDivisionForm.addEventListener('submit', function(event) {
+        console.log("ADD Form Submit Attempt (Place no numbers, non-unique informative).");
+        const nameOnSubmit = divisionNameInput.value.trim();
+        const placeOnSubmit = divisionPlaceInput.value.trim();
+
+        const isNameFormatValidOnSubmit = validateNameFormatOnly(nameOnSubmit);
+        const isPlaceFormatValidOnSubmit = validatePlaceFormatOnly(placeOnSubmit);
+
+        let finalFormIsValid = true;
+
+        if (!isNameFormatValidOnSubmit || !isDivisionNameAvailable) {
+            console.log("ADD Name validation failed on submit.");
+            if(isNameFormatValidOnSubmit && !isDivisionNameAvailable && !nameValidationMessage.textContent.includes('exists') && !nameValidationMessage.textContent.includes('Could not check')) {
+                updateValidationMessage(nameValidationMessage, 'Name availability not confirmed or name taken.', 'error');
+            }
+            setInputValidity(divisionNameInput, false);
+            finalFormIsValid = false;
+        }
+
+        if (!isPlaceFormatValidOnSubmit) {
+            console.log("ADD Place format validation failed on submit.");
+            setInputValidity(divisionPlaceInput, false); // Message already set by validatePlaceFormatOnly
+            finalFormIsValid = false;
+        }
+
+        if (!finalFormIsValid) {
+            console.log("ADD Form is NOT valid. Preventing submission.");
+            event.preventDefault();
+            if (!isNameFormatValidOnSubmit || !isDivisionNameAvailable) { divisionNameInput.focus(); }
+            else if (!isPlaceFormatValidOnSubmit) { divisionPlaceInput.focus(); }
+        } else {
+            console.log("ADD Form is valid. Standardizing name and allowing submission.");
+            divisionNameInput.value = nameOnSubmit.replace(/division/i, 'Division');
+        }
+    });
+    console.log("ADD Event listeners attached (Place no numbers, non-unique informative).");
+});
+</script>
+{% endblock %}

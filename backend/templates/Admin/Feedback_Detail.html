@@ -1,0 +1,156 @@
+{% extends 'Admin/admin_base.html' %}
+
+{% block title %}Feedback Detail - WildEye Admin{% endblock %}
+
+{% block styles %}
+<style>
+    /* Styling for the main content container */
+    .feedback-page-container {
+        max-width: 900px; /* Limit content width for better readability */
+        margin: 40px auto; /* Center the content and add vertical spacing */
+        padding: 0 20px; /* Add some horizontal padding for smaller screens */
+    }
+
+    /* Page title styling */
+    .feedback-page-container h2 {
+        color: #333; /* Darker text for headings */
+        font-size: 2em; /* Larger font size */
+        margin-bottom: 20px;
+        font-weight: 700; /* Bolder */
+        text-align: center; /* Center the title */
+    }
+
+    /* Separator line styling */
+    .feedback-page-container hr {
+        border-top: 1px solid #eee; /* Light gray border */
+        margin-bottom: 30px; /* Space below the line */
+    }
+
+    /* Styling for the main feedback detail card */
+    .feedback-detail-card {
+        background-color: #ffffff; /* White background */
+        border-radius: 12px; /* More pronounced rounded corners */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer, yet visible shadow */
+        padding: 30px; /* Generous padding inside the card */
+        margin-bottom: 30px; /* Space below the card */
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; /* Smooth transitions for hover effects */
+    }
+
+    /* Hover effect for the feedback card */
+    .feedback-detail-card:hover {
+        transform: translateY(-3px); /* Subtle lift effect */
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); /* Slightly larger shadow on hover */
+    }
+
+    /* General paragraph styling within the card */
+    .feedback-detail-card p {
+        margin-bottom: 10px; /* Space between information lines */
+        line-height: 1.6; /* Improved line spacing for readability */
+        color: #555; /* Slightly softer text color */
+    }
+
+    /* Styling for strong/bold text labels (e.g., "User:", "Date:") */
+    .feedback-detail-card p strong {
+        color: #333; /* Darker color for labels */
+        font-weight: 600; /* Bolder font weight */
+    }
+
+    /* Specific styling for the actual feedback content block */
+    .feedback-content {
+        background-color: #f4f7f6; /* Very light gray background */
+        border-left: 5px solid #008e28; /* Green accent border on the left */
+        padding: 20px;
+        border-radius: 8px; /* Rounded corners for the content block */
+        margin-top: 20px; /* Space above the feedback content */
+        font-style: italic; /* Italicize the feedback text to distinguish it */
+        color: #444; /* Slightly darker text for the feedback itself */
+    }
+
+    /* Remove bottom margin for the last paragraph within the feedback content */
+    .feedback-content p {
+        margin-bottom: 0;
+    }
+
+    /* Styling for the "Back to Feedback List" button */
+    .btn-back-feedback {
+        display: inline-flex; /* Use flexbox to align icon and text */
+        align-items: center; /* Center items vertically */
+        gap: 8px; /* Space between icon and text */
+        background-color: #6c757d; /* Bootstrap's secondary color (gray) */
+        color: #fff; /* White text color */
+        padding: 10px 20px; /* Padding inside the button */
+        border-radius: 8px; /* Rounded corners for the button */
+        text-decoration: none; /* Remove underline from link */
+        font-weight: 500; /* Medium font weight */
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        transition: background-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transitions */
+    }
+
+    /* Hover effect for the "Back" button */
+    .btn-back-feedback:hover {
+        background-color: #5a6268; /* Darken background on hover */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Slightly larger shadow on hover */
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .feedback-page-container {
+            margin: 20px auto; /* Adjust margin for smaller screens */
+            padding: 0 15px;
+        }
+        .feedback-detail-card {
+            padding: 20px; /* Reduce padding for smaller screens */
+        }
+        .feedback-page-container h2 {
+            font-size: 1.8em; /* Slightly smaller heading */
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-page-container">
+    <h3>Feedback Details</h3>
+    <hr>
+
+    <div class="feedback-detail-card">
+        <p><strong>User:</strong> {{ feedback.USER }} (ID: {{ feedback.USER.id }})</p>
+        <p><strong>Date:</strong> {{ feedback.date }}</p>
+        <p><strong>Feedback:</strong></p>
+        <div class="feedback-content">
+            <p>{{ feedback.details }}</p>
+        </div>
+    </div>
+
+    <p style="text-align: center;">
+        <a href="{% url 'admin_view_user_feedback' %}" class="btn-back-feedback">
+            <i class="fas fa-arrow-left"></i> Back to Feedback List
+        </a>
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Any page-specific scripts can go here if needed -->
+{% endblock %}
+
+
+<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Feedback Detail</title>
+</head>
+<body>
+
+  <h1>Feedback Details</h1>
+
+  <p><strong>User:</strong> {{ feedback.USER }} (ID: {{ feedback.USER.id }})</p>
+  <p><strong>Date:</strong> {{ feedback.date }}</p>
+  <p><strong>Feedback:</strong></p>
+  <p>{{ feedback.details }}</p> {# Display the full details here #}
+
+  <p><a href="{% url 'admin_view_user_feedback' %}">Back to Feedback List</a></p>
+
+</body>
+</html> -->

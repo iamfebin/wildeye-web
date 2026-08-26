@@ -1,0 +1,223 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Edit Camera {{ camera.camera_id }} - WildEye Officer{% endblock title %}
+
+{% block page_title %}Modify Camera (Device ID: {{ camera.camera_id }}){% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<style>
+    .form-card-camera {
+        border-radius: 0.75rem;
+    }
+    .form-card-camera .card-header {
+        background-color: #ffc107; /* Warning yellow for edit */
+        color: #333; /* Darker text for yellow background */
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+    }
+    #map {
+        height: 350px;
+        width: 100%;
+        border-radius: 0.375rem;
+        border: 1px solid #ced4da;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        background-color: #f8f9fa;
+    }
+    .map-instruction {
+        font-size: 0.875em;
+        color: #6c757d;
+    }
+    .actions-footer {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    /* CSS for Flatpickr if used on other forms, included for consistency */
+    input.flatpickr-input.form-control-lg {
+        height: calc(1.5em + 1rem + 2px); padding: 0.5rem 1rem; font-size: 1.25rem;
+        line-height: 1.5; border-radius: 0.3rem; width: 100%;
+    }
+    /* Styles for error feedback visibility */
+    .invalid-feedback.d-block { color: #dc3545; font-size: 0.875em; }
+    .form-control.is-invalid, .form-select.is-invalid { border-color: #dc3545 !important; }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+            {% if messages %} {# Display Django messages #}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-3 shadow-sm mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card shadow-sm form-card-camera">
+                <div class="card-header py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-pencil-square me-2" style="font-size: 1.3em;"></i>
+                        Edit Camera Configuration
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate> {# Action="" means submit to current URL #}
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger rounded-3 shadow-sm">
+                                {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.camera_id.id_for_label }}" class="form-label fw-medium">{{ form.camera_id.label }} {% if form.camera_id.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                            {{ form.camera_id }}
+                            {% if form.camera_id.help_text %}<small class="form-text text-muted">{{ form.camera_id.help_text }}</small>{% endif %}
+                            {% for error in form.camera_id.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                        </div>
+
+                        <fieldset class="mb-3">
+                            <legend class="form-label fw-medium h6"><i class="bi bi-geo-alt-fill me-1"></i>Camera Location</legend>
+                             <p class="map-instruction mb-2">
+                                <i class="bi bi-info-circle me-1"></i>Use the search bar or click/drag marker on the map to set coordinates.
+                            </p>
+                            <div id="map">Loading map...</div>
+                        </fieldset>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.latitude.id_for_label }}" class="form-label fw-medium">{{ form.latitude.label }} {% if form.latitude.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.latitude }}
+                                {% for error in form.latitude.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.longitude.id_for_label }}" class="form-label fw-medium">{{ form.longitude.label }} {% if form.longitude.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+                                {{ form.longitude }}
+                                {% for error in form.longitude.errors %}<div class="invalid-feedback d-block mt-1">{{ error }}</div>{% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="actions-footer">
+                            <a href="{% url 'forest_officer_view_camera' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+                                <i class="bi bi-x-circle-fill me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning rounded-pill shadow-sm px-4 py-2"> {# Changed to btn-warning #}
+                                <i class="bi bi-save-fill me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const latField = document.getElementById('id_latitude');
+    const lonField = document.getElementById('id_longitude');
+    const mapDiv = document.getElementById('map');
+
+    if (!latField || !lonField || !mapDiv) {
+        console.error("Map fields or map container not found!");
+        if(mapDiv) mapDiv.innerHTML = "Map initialization failed: Required elements missing.";
+        return;
+    }
+    mapDiv.innerHTML = '';
+
+    // Use initial values passed from context (from existing camera data or previous form submission)
+    let initialLat = parseFloat('{{ initial_map_lat|escapejs }}');
+    let initialLon = parseFloat('{{ initial_map_lon|escapejs }}');
+    let initialZoom = parseInt('{{ initial_map_zoom|escapejs }}');
+
+    const map = L.map('map').setView([initialLat, initialLon], initialZoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19,
+    }).addTo(map);
+
+    let marker = null;
+
+    function updateMarkerAndFields(lat, lng, shouldPan = true, zoomLevel = null) {
+        const roundedLat = parseFloat(lat.toFixed(6));
+        const roundedLng = parseFloat(lng.toFixed(6));
+
+        if (marker) {
+            marker.setLatLng([roundedLat, roundedLng]);
+        } else {
+            marker = L.marker([roundedLat, roundedLng], { draggable: true }).addTo(map);
+            marker.on('dragend', function(event) {
+                const newLatLng = event.target.getLatLng();
+                updateMarkerAndFields(newLatLng.lat, newLatLng.lng, false);
+            });
+        }
+        if (shouldPan) {
+            map.setView([roundedLat, roundedLng], zoomLevel || map.getZoom()); // Use current zoom if no specific zoomlevel
+        }
+        if (latField) latField.value = roundedLat;
+        if (lonField) lonField.value = roundedLng;
+    }
+
+    // Place initial marker if valid coordinates are present
+    if (!isNaN(initialLat) && !isNaN(initialLon)) {
+        updateMarkerAndFields(initialLat, initialLon, false); // Don't pan, setView already handled it
+    }
+
+    map.on('click', function(e) {
+        updateMarkerAndFields(e.latlng.lat, e.latlng.lng);
+    });
+
+    const geocoder = L.Control.geocoder({
+        defaultMarkGeocode: false,
+        placeholder: 'Search for a location...',
+        errorMessage: 'Nothing found.',
+        geocoder: L.Control.Geocoder.nominatim()
+    }).on('markgeocode', function(e) {
+        const latlng = e.geocode.center;
+        updateMarkerAndFields(latlng.lat, latlng.lng, true, map.getMaxZoom() > 16 ? 16 : map.getZoom());
+    }).addTo(map);
+
+    setTimeout(function() { map.invalidateSize(); }, 150);
+
+    // Script to add 'is-invalid' class (from previous step)
+    document.querySelectorAll('.form-control, .form-select').forEach(function(inputElement) {
+        let errorSibling = inputElement.nextElementSibling;
+        while(errorSibling){
+            if (errorSibling.classList.contains('invalid-feedback') && errorSibling.classList.contains('d-block')){
+                inputElement.classList.add('is-invalid');
+                break;
+            }
+            errorSibling = errorSibling.nextElementSibling;
+        }
+        if (!inputElement.classList.contains('is-invalid')) {
+            const parentDiv = inputElement.closest('.mb-3');
+            if (parentDiv) {
+                const errorDivInParent = parentDiv.querySelector('.invalid-feedback.d-block');
+                if (errorDivInParent) {
+                    inputElement.classList.add('is-invalid');
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock extra_scripts %}

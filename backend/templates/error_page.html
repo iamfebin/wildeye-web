@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .error-container { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto; }
+        h1 { color: #dc3545; }
+        a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1>Access Denied!</h1>
+        <p>{{ message|default:"You are not authorized to view this page or perform this action." }}</p>
+        <p><a href="{% url 'login' %}">Go to Login Page</a></p>
+        <p><a href="{% url 'forest_officer_view_user_complaints' %}">Back to Complaints (if you think you should be here)</a></p>
+    </div>
+</body>
+</html>

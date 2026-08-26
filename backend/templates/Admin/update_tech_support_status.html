@@ -1,0 +1,285 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Update IT Support Request{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    #page-content-wrapper {
+        padding: 25px 30px;
+        background-color: #f4f7f6; /* Consistent background */
+    }
+
+    #top-bar h1 { /* For the main title in base template */
+        font-size: 2em;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .form-container-card {
+        background-color: #ffffff;
+        padding: 30px 35px; /* More padding */
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+        max-width: 800px; /* Increased max-width for better layout */
+        margin: 20px auto; /* Center the card */
+    }
+
+    .form-container-card .page-subtitle {
+        font-size: 1.8em;
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        text-align: center;
+    }
+
+    .request-details-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: #f8f9fa; /* Light background for details */
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+    .request-details-section h3 {
+        font-size: 1.3em;
+        color: #495057;
+        margin-top: 0;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #d1d8e0;
+        padding-bottom: 10px;
+    }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
+        gap: 15px;
+    }
+    .detail-item {
+        padding: 8px 0;
+    }
+    .detail-item strong {
+        font-weight: 600;
+        color: #555;
+        display: block; /* Label on its own line */
+        margin-bottom: 4px;
+        font-size: 0.95em;
+    }
+    .detail-item span {
+        color: #333;
+        font-size: 1em;
+        word-break: break-word;
+    }
+    .detail-item .status-badge { /* Use status badge styles from list view */
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.85em;
+        color: white;
+        display: inline-block;
+        text-align: center;
+    }
+    .status-pending { background-color: #ffc107; color: #333; }
+    .status-dispatched { background-color: #17a2b8; }
+    .status-resolved { background-color: #28a745; }
+    .status-on_hold { background-color: #6c757d; }
+    .status-cancelled { background-color: #dc3545; }
+
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 1em;
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px 15px; /* Enhanced padding */
+        font-size: 1em;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 8px; /* More rounded */
+        transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+    }
+    textarea.form-control {
+        min-height: 120px; /* Good default height */
+        resize: vertical;
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        justify-content: space-between; /* Align items */
+        align-items: center;
+        flex-wrap: wrap; /* Wrap if space is limited */
+        gap: 15px;
+    }
+    .btn-submit-form { /* Primary action button */
+        background-image: linear-gradient(to right, #28a745 0%, #218838 100%); /* Green gradient */
+        color: white;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2);
+        font-size: 1.05em;
+    }
+    .btn-submit-form:hover, .btn-submit-form:focus {
+        background-image: linear-gradient(to right, #218838 0%, #1e7e34 100%);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .link-back {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 10px 15px;
+        border-radius: 20px;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .link-back:hover {
+        background-color: #e9ecef;
+        color: #0056b3;
+    }
+    .link-back i {
+        margin-right: 6px;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="form-container-card">
+        <h2 class="page-subtitle">Update IT Support Request</h2>
+
+        <div class="request-details-section">
+            <h3>Request Details</h3>
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <strong>Officer:</strong>
+                    <span>{{ tech_request.OFFICER.first_name }} {{ tech_request.OFFICER.last_name }}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Station:</strong>
+                    <span>{{ tech_request.OFFICER.STATION.name }}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Station Phone:</strong>
+                    <span>{{ tech_request.OFFICER.STATION.phone|default:"N/A" }}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Issue Type:</strong>
+                    <span>{{ tech_request.get_issue_type_display }}</span>
+                </div>
+                <div class="detail-item" style="grid-column: 1 / -1;"> {# Span full width for description #}
+                    <strong>Description:</strong>
+                    <span>{{ tech_request.description|linebreaksbr }}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Date Requested:</strong>
+                    <span>{{ tech_request.request_date|date:"d M Y, P" }}</span>
+                </div>
+                <div class="detail-item">
+                    <strong>Current Status:</strong>
+                    <span>
+                        <span class="status-badge status-{{ tech_request.status|lower }}">
+                            {{ tech_request.get_status_display }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="status">Update Status:</label>
+                <select id="status" name="status" class="form-control">
+                    {% for value, label_text in statuses %} {# Changed label to label_text to avoid conflict #}
+                        <option value="{{ value }}" {% if value == tech_request.status %}selected{% endif %}>{{ label_text }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="resolution_notes_div" class="form-group" style="display: {% if tech_request.status == 'resolved' %}block{% else %}none{% endif %};">
+                <label for="resolution_notes">Resolution Notes:</label>
+                <textarea id="resolution_notes" name="resolution_notes" rows="5" class="form-control" placeholder="Enter notes on how the issue was resolved. (Required if status is 'Resolved')">{{ tech_request.resolution_notes|default_if_none:'' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                 <a href="{% url 'admin_view_tech_support_requests' %}" class="link-back">
+                    <i class="fas fa-arrow-left"></i> Back to All Requests
+                </a>
+                <button type="submit" class="btn-submit-form">
+                    <i class="fas fa-check-circle" style="margin-right: 8px;"></i> Update Status
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSelect = document.getElementById('status');
+    const resolutionNotesDiv = document.getElementById('resolution_notes_div');
+    const resolutionNotesTextarea = document.getElementById('resolution_notes');
+
+    function toggleResolutionNotes() {
+        if (statusSelect.value === 'resolved') {
+            resolutionNotesDiv.style.display = 'block';
+            resolutionNotesTextarea.required = true; // Make notes required if status is resolved
+        } else {
+            resolutionNotesDiv.style.display = 'none';
+            resolutionNotesTextarea.required = false;
+        }
+    }
+
+    // Initial call to set visibility and requirement based on current status
+    if (statusSelect) { // Ensure select exists
+        toggleResolutionNotes();
+        statusSelect.addEventListener('change', toggleResolutionNotes);
+    }
+
+    // Active sidebar link handler (optional for form pages, but good for consistency if part of a section)
+    const currentPath = window.location.pathname;
+    // Assuming 'admin_view_tech_support_requests' is the main link for this section
+    const techSupportBaseLink = document.querySelector('#sidebar ul li a[href="{% url 'admin_view_tech_support_requests' %}"]');
+
+    if (techSupportBaseLink && (currentPath.includes('/tech-support/update/') || currentPath === '{% url "admin_view_tech_support_requests" %}')) {
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        techSupportBaseLink.closest('li').classList.add('active-link');
+    }
+});
+</script>
+{% endblock %}

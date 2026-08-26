@@ -1,0 +1,427 @@
+{% extends "Admin/admin_base.html" %}
+
+{% block title %}Admin Edit Forest Station - {{ station.name }}{% endblock %}
+
+{% block head_extra %}
+    {# No extra CSS needed here if not using a specific geocoding plugin's CSS #}
+{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* --- Styles are identical to Add_Forest_Station.html for consistency --- */
+    .form-content-wrapper {
+        background-color: #ffffff; padding: 30px 40px; margin-top: 20px;
+        border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .styled-form-table {
+        width: 100%; border-collapse: separate; border-spacing: 0 15px; margin-top: 10px;
+    }
+    .styled-form-table td { padding: 10px; border-bottom: none; vertical-align: top; }
+    .styled-form-table td:first-child {
+        font-weight: 600; color: #343a40; width: 25%; min-width: 150px;
+        text-align: left; padding-right: 20px; padding-top: 12px;
+    }
+    .input-group { position: relative; display: flex; flex-direction: column; }
+    .styled-form-table input[type="text"],
+    .styled-form-table input[type="tel"],
+    .styled-form-table input[type="number"],
+    .styled-form-table select {
+        width: 100%; padding: 12px 15px; border: 1px solid #ced4da;
+        border-radius: 8px; box-sizing: border-box; font-family: 'Poppins', sans-serif;
+        font-size: 1em; color: #495057;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .styled-form-table input[type="text"]:focus,
+    .styled-form-table input[type="tel"]:focus,
+    .styled-form-table input[type="number"]:focus,
+    .styled-form-table select:focus {
+        border-color: #007bff; outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .styled-form-table input[type="submit"] { /* Update button color for "Update" */
+        background-image: linear-gradient(to right, #007bff, #0056b3); /* Blue gradient for update */
+        color: white; padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer;
+        font-size: 1.05em; font-weight: 600; letter-spacing: 0.5px;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2); transition: all 0.3s ease;
+    }
+    .styled-form-table input[type="submit"]:hover {
+        background-image: linear-gradient(to right, #0056b3, #004085); /* Darker blue */
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3); transform: translateY(-2px);
+    }
+    .submit-cell { text-align: left; padding-top: 20px !important; }
+    .validation-message { font-size: 0.875em; margin-top: 8px; display: block; min-height: 1.2em; font-weight: 500; }
+    .validation-message.error { color: #dc3545; }
+    .validation-message.success { color: #28a745; }
+    .validation-message.checking { color: #007bff; }
+    .validation-message.info { color: #17a2b8; }
+
+    .map-search-container { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+    .map-search-container input[type="text"] { flex-grow: 1; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 8px; font-size: 0.95em;}
+    .map-search-container button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95em; line-height: 1.5; transition: background-color 0.2s; }
+    .map-search-container button:hover { background-color: #0056b3; }
+    #mapPickLocation { height: 350px; width: 100%; border: 1px solid #ccc; border-radius: 8px; margin-top: 5px; }
+    .lat-lon-group { display: flex; gap: 15px; margin-top:10px; }
+    .lat-lon-group .input-group { flex: 1; }
+    .lat-lon-group label { font-size: 0.9em; margin-bottom: 3px; font-weight: 500; color: #495057; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div id="top-bar">
+        <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <h1>Edit Forest Station: {{ station.name }}</h1> {# Dynamic title #}
+    </div>
+
+    <div class="form-content-wrapper">
+        <form id="editForestStationForm" name="editForestStationForm" method="post" action="{% url 'admin_edit_forest_station' id=station.id %}">
+            {% csrf_token %}
+            {# Hidden fields to store original values for JS comparison #}
+            <input type="hidden" id="originalStationName" value="{{ station.name|escapejs }}">
+            <input type="hidden" id="originalStationPlace" value="{{ station.place|escapejs }}">
+            <input type="hidden" id="originalStationPhone" value="{{ station.phone|escapejs }}">
+            <input type="hidden" id="stationId" value="{{ station.id }}">
+
+
+            <table class="styled-form-table">
+                <tr>
+                    <td><label for="stationName">Station Name</label></td>
+                    <td>
+                        <div class="input-group">
+                            <input type="text" name="name" id="stationName" value="{{ form_data.name|default:station.name }}" required autocomplete="off"/>
+                            <span id="stationNameValidationMessage" class="validation-message"></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="stationPlace">Place</label></td>
+                    <td>
+                        <div class="input-group">
+                            <input type="text" name="place" id="stationPlace" value="{{ form_data.place|default:station.place }}" required autocomplete="off"/>
+                            <span id="stationPlaceValidationMessage" class="validation-message"></span>
+                        </div>
+                    </td>
+                </tr>
+<tr>
+    <td><label for="divisionSelect">Division</label></td>
+    <td>
+        <div class="input-group">
+            <select name="division" id="divisionSelect" required>
+                <option value="">-- Select Division --</option>
+                {# --- TEMPLATE DEBUG START --- #}
+                <!-- 
+                    DEBUG: Value to be selected (form_data.division from view context): '{{ form_data.division }}' 
+                           (This should be a STRING ID from the view for both GET and POST-error)
+                -->
+                {% for d_opt in divisions %}
+                    {% with d_opt_id_as_string=d_opt.id|stringformat:"s" %}
+                    {% with value_to_select_as_string=form_data.division|default:''|stringformat:"s" %}
+                        <!-- 
+                            Loop Option ID (d_opt_id_as_string): '{{ d_opt_id_as_string }}'
+                            Value To Select (value_to_select_as_string): '{{ value_to_select_as_string }}'
+                            Is Selected?: {% if value_to_select_as_string == d_opt_id_as_string %}TRUE{% else %}FALSE{% endif %}
+                        -->
+                        <option value="{{ d_opt.id }}" {% if value_to_select_as_string == d_opt_id_as_string %}selected{% endif %}>
+                            {{ d_opt.name }} ({{ d_opt.place }})
+                        </option>
+                    {% endwith %}
+                    {% endwith %}
+                {% endfor %}
+                {# --- TEMPLATE DEBUG END --- #}
+            </select>
+            <span id="divisionValidationMessage" class="validation-message"></span>
+        </div>
+    </td>
+</tr>
+                <tr>
+                    <td><label for="stationPhone">Phone Number</label></td>
+                    <td>
+                        <div class="input-group">
+                            <input type="tel" name="phone" id="stationPhone" value="{{ form_data.phone|default:station.phone }}" required autocomplete="off" pattern="[6-9]\d{9}" title="10-digit number starting with 6, 7, 8, or 9"/>
+                            <span id="stationPhoneValidationMessage" class="validation-message"></span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Location</td>
+                    <td>
+                        <div class="map-search-container">
+                            <input type="text" id="mapSearchQuery" placeholder="Search location name..."/>
+                            <button type="button" id="mapSearchButton"><i class="fas fa-search"></i> Search</button>
+                        </div>
+                        <div id="mapPickLocation"></div>
+                        <div class="lat-lon-group">
+                            <div class="input-group">
+                                <label for="stationLatitude">Latitude</label>
+                                <input type="number" name="latitude" id="stationLatitude" value="{{ form_data.latitude|default:station.latitude|default:'' }}" step="any" required readonly placeholder="Pick on map"/>
+                                <span id="latitudeValidationMessage" class="validation-message"></span>
+                            </div>
+                            <div class="input-group">
+                                <label for="stationLongitude">Longitude</label>
+                                <input type="number" name="longitude" id="stationLongitude" value="{{ form_data.longitude|default:station.longitude|default:'' }}" step="any" required readonly placeholder="Pick on map"/>
+                                <span id="longitudeValidationMessage" class="validation-message"></span>
+                            </div>
+                        </div>
+                         <small style="display: block; margin-top: 5px; color: #6c757d;">Click on the map or search to set coordinates.</small>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="submit-cell">
+                        <input type="submit" id="submitButton" value="Update Station" />
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("Edit Station Script Loaded (Map Search, Place Non-Unique Informative)");
+
+    const stationNameInput = document.getElementById('stationName');
+    const stationNameMsg = document.getElementById('stationNameValidationMessage');
+    const stationPlaceInput = document.getElementById('stationPlace');
+    const stationPlaceMsg = document.getElementById('stationPlaceValidationMessage');
+    const divisionSelect = document.getElementById('divisionSelect');
+    const divisionMsg = document.getElementById('divisionValidationMessage');
+    const stationPhoneInput = document.getElementById('stationPhone');
+    const stationPhoneMsg = document.getElementById('stationPhoneValidationMessage');
+    const latitudeInput = document.getElementById('stationLatitude');
+    const longitudeInput = document.getElementById('stationLongitude');
+    const latitudeMsg = document.getElementById('latitudeValidationMessage');
+    const longitudeMsg = document.getElementById('longitudeValidationMessage');
+    const mapSearchQueryInput = document.getElementById('mapSearchQuery');
+    const mapSearchButton = document.getElementById('mapSearchButton');
+    const form = document.getElementById('editForestStationForm');
+    const submitButton = document.getElementById('submitButton');
+
+
+    if (!stationNameInput || !stationPlaceInput || !divisionSelect || !stationPhoneInput || !latitudeInput || !longitudeInput || !mapSearchQueryInput || !mapSearchButton || !form || !submitButton) {
+        console.error("Edit Script: One or more critical elements not found. Validation and submission might fail.");
+        // return; // You might choose to return if critical elements are missing.
+    }
+
+    const originalStationName = document.getElementById('originalStationName')?.value || "";
+    const originalStationPlace = document.getElementById('originalStationPlace')?.value || "";
+    const originalStationPhone = document.getElementById('originalStationPhone')?.value || "";
+    const stationId = document.getElementById('stationId')?.value || "";
+
+    console.log("Edit Script: Originals - Name:", originalStationName, "Place:", originalStationPlace, "Phone:", originalStationPhone, "ID:", stationId);
+
+
+    let map, marker; // Declare map and marker variables
+
+    function initializeMap() {
+        console.log("Initializing map...");
+        const defaultLat = 20.5937;
+        const defaultLon = 78.9629;
+        const initialLat = parseFloat(latitudeInput.value) || defaultLat;
+        const initialLon = parseFloat(longitudeInput.value) || defaultLon;
+        const initialZoom = (latitudeInput.value && longitudeInput.value && parseFloat(latitudeInput.value) !== 0) ? 13 : 5; // Check for 0 too
+
+        if (document.getElementById('mapPickLocation')) {
+            map = L.map('mapPickLocation').setView([initialLat, initialLon], initialZoom);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19, attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            if (latitudeInput.value && longitudeInput.value && parseFloat(latitudeInput.value) !== 0) {
+                updateMarkerAndInputs(initialLat, initialLon, initialZoom);
+            }
+            map.on('click', function(e) { updateMarkerAndInputs(e.latlng.lat, e.latlng.lng); });
+        } else {
+            console.error("Map container #mapPickLocation not found!");
+        }
+    }
+
+
+    function updateMarkerAndInputs(lat, lon, zoomLevel = 13) {
+        if (!map) { console.warn("Map not initialized, cannot update marker."); return; }
+        if (marker) { map.removeLayer(marker); }
+        const latLng = L.latLng(lat, lon);
+        marker = L.marker(latLng).addTo(map);
+        map.setView(latLng, zoomLevel);
+        if (latitudeInput) latitudeInput.value = lat.toFixed(6);
+        if (longitudeInput) longitudeInput.value = lon.toFixed(6);
+        validateLatitude(); validateLongitude();
+        if (latitudeInput) latitudeInput.dispatchEvent(new Event('input'));
+        if (longitudeInput) longitudeInput.dispatchEvent(new Event('input'));
+    }
+
+    if (mapSearchButton) mapSearchButton.addEventListener('click', performMapSearch);
+    if (mapSearchQueryInput) mapSearchQueryInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); performMapSearch(); }});
+
+    function performMapSearch() {
+        if (!mapSearchQueryInput || !mapSearchButton) return;
+        const query = mapSearchQueryInput.value.trim();
+        if (!query) { alert("Please enter a location to search."); mapSearchQueryInput.focus(); return; }
+        const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`;
+        updateMsg(latitudeMsg, 'Searching map...', 'checking'); mapSearchButton.disabled = true; mapSearchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+        fetch(nominatimUrl)
+            .then(response => { if (!response.ok) throw new Error(`Nominatim error: ${response.statusText}`); return response.json(); })
+            .then(data => {
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    updateMarkerAndInputs(parseFloat(result.lat), parseFloat(result.lon), 15);
+                    updateMsg(latitudeMsg, '', ''); mapSearchQueryInput.value = result.display_name;
+                } else { alert("Location not found."); updateMsg(latitudeMsg, 'Location not found.', 'error'); }
+            })
+            .catch(error => { console.error("Map search error:", error); alert("Error searching: " + error.message); updateMsg(latitudeMsg, 'Search error.', 'error'); })
+            .finally(() => { mapSearchButton.disabled = false; mapSearchButton.innerHTML = '<i class="fas fa-search"></i> Search'; });
+    }
+
+    function updateMsg(element, message, type) {
+        if (!element) { console.warn("updateMsg: null element."); return; }
+        element.textContent = message;
+        element.className = 'validation-message ' + type;
+    }
+
+    function setInputValid(inputEl, isValid, isInfo = false) {
+        if (!inputEl) { console.warn("setInputValid: null inputEl."); return; }
+        inputEl.classList.remove('valid', 'invalid', 'info-input');
+        if (isInfo) inputEl.classList.add('info-input');
+        else if (isValid === true) inputEl.classList.add('valid');
+        else if (isValid === false) inputEl.classList.add('invalid');
+    }
+
+    let debounceTimers = {};
+    const fieldsToValidate = [
+        { input: stationNameInput, originalValue: originalStationName, msgEl: stationNameMsg, fieldNameDb: 'station_name', label: "Station Name", minLength: 3, checkUniqueness: true, formatValidator: (val) => val.length > 0, formatErrorMsg: "Station Name is required." },
+        { input: stationPlaceInput, originalValue: originalStationPlace, msgEl: stationPlaceMsg, fieldNameDb: 'station_place', label: "Place", minLength: 2, checkUniquenessIsInfo: true, formatValidator: (val) => val.length > 0 && !/\d/.test(val), formatErrorMsg: "Place is required and cannot contain numbers." },
+        { input: stationPhoneInput, originalValue: originalStationPhone, msgEl: stationPhoneMsg, fieldNameDb: 'station_phone', label: "Phone Number", checkUniqueness: true, formatValidator: (val) => /^[6-9]\d{9}$/.test(val), formatErrorMsg: "Enter a valid 10-digit phone (starts with 6-9)." }
+    ];
+
+    fieldsToValidate.forEach(field => {
+        if (!field.input) { console.warn(`Edit Val: Input for ${field.label} not found.`); return; }
+        field.input.addEventListener('input', function() {
+            const value = field.input.value.trim();
+            clearTimeout(debounceTimers[field.fieldNameDb]);
+            updateMsg(field.msgEl, '', ''); setInputValid(field.input, null);
+
+            let isFormatValid;
+            if (field.input.required && value === "") { updateMsg(field.msgEl, `${field.label} is required.`, 'error'); setInputValid(field.input, false); isFormatValid = false; }
+            else if (value.length > 0 && field.minLength && value.length < field.minLength) { updateMsg(field.msgEl, `${field.label} must be at least ${field.minLength} chars.`, 'error'); setInputValid(field.input, false); isFormatValid = false; }
+            else if (value.length > 0 && !field.formatValidator(value)) { updateMsg(field.msgEl, field.formatErrorMsg, 'error'); setInputValid(field.input, false); isFormatValid = false; }
+            else if (value.length > 0) { isFormatValid = true; /* Don't show success until AJAX for unique fields */ }
+            else { isFormatValid = !field.input.required; } // Empty is format-valid if not required
+
+            const isSameAsOriginal = (field.fieldNameDb === 'station_phone') ? (value === field.originalValue) : (value.toLowerCase() === field.originalValue.toLowerCase());
+            const shouldCheckDb = field.checkUniqueness || field.checkUniquenessIsInfo;
+
+            if (isFormatValid && value.length > 0 && shouldCheckDb) {
+                if (isSameAsOriginal) {
+                    updateMsg(field.msgEl, 'This is the current value.', 'info');
+                    setInputValid(field.input, true, true);
+                } else {
+                    debounceTimers[field.fieldNameDb] = setTimeout(() => {
+                        updateMsg(field.msgEl, 'Checking...', 'checking');
+                        fetch(`{% url 'admin_check_field_exists' %}?model_name=forest_station&field_name=${field.fieldNameDb}&field_value=${encodeURIComponent(value)}&exclude_id=${stationId}`)
+                            .then(response => { if (!response.ok) throw new Error(`Network error: ${response.statusText}`); return response.json(); })
+                            .then(data => {
+                                if (data.error) { updateMsg(field.msgEl, data.error, 'error'); setInputValid(field.input, false); }
+                                else if (data.exists) {
+                                    if (field.checkUniquenessIsInfo) { updateMsg(field.msgEl, 'This value is used elsewhere (informational).', 'info'); setInputValid(field.input, true, true); }
+                                    else { updateMsg(field.msgEl, 'This value is already in use by another record.', 'error'); setInputValid(field.input, false); }
+                                } else { updateMsg(field.msgEl, 'Value is available!', 'success'); setInputValid(field.input, true); }
+                            })
+                            .catch(error => { console.error(`Edit Error checking ${field.fieldNameDb}:`, error); updateMsg(field.msgEl, 'Could not check. ' + error.message, 'error'); setInputValid(field.input, false); });
+                    }, 700);
+                }
+            } else if (isFormatValid && value.length === 0 && !field.input.required) { updateMsg(field.msgEl, '', ''); setInputValid(field.input, null); }
+            else if (isFormatValid && value.length > 0 && !shouldCheckDb) { // Format valid, no DB check
+                updateMsg(field.msgEl, 'Format valid.', 'success'); setInputValid(field.input, true);
+            }
+        });
+    });
+
+    function validateSelect(selectEl, msgEl) {
+        if (!selectEl) return true;
+        if (selectEl.value === "") { updateMsg(msgEl, `${selectEl.labels[0]?.textContent || 'Selection'} is required.`, 'error'); setInputValid(selectEl, false); return false; }
+        updateMsg(msgEl, '', 'success'); setInputValid(selectEl, true); return true;
+    }
+    
+    function validateLatitude() {
+        if (!latitudeInput) return true;
+        const val = latitudeInput.value;
+        if (val === "" || val === null) { updateMsg(latitudeMsg, "Latitude is required.", "error"); setInputValid(latitudeInput, false); return false; }
+        if (isNaN(parseFloat(val)) || parseFloat(val) < -90 || parseFloat(val) > 90) { updateMsg(latitudeMsg, "Invalid latitude (-90 to 90).", "error"); setInputValid(latitudeInput, false); return false; }
+        updateMsg(latitudeMsg, "", "success"); setInputValid(latitudeInput, true); return true;
+    }
+    function validateLongitude() {
+        if (!longitudeInput) return true;
+        const val = longitudeInput.value;
+        if (val === "" || val === null) { updateMsg(longitudeMsg, "Longitude is required.", "error"); setInputValid(longitudeInput, false); return false; }
+        if (isNaN(parseFloat(val)) || parseFloat(val) < -180 || parseFloat(val) > 180) { updateMsg(longitudeMsg, "Invalid longitude (-180 to 180).", "error"); setInputValid(longitudeInput, false); return false; }
+        updateMsg(longitudeMsg, "", "success"); setInputValid(longitudeInput, true); return true;
+    }
+    
+    function performInitialPageValidation() {
+        console.log("(EDIT) Performing initial page validation checks.");
+        fieldsToValidate.forEach(field => {
+            if (field.input && field.input.value.trim() !== '') {
+                field.input.dispatchEvent(new Event('input', { bubbles: true }));
+            } else if (field.input && field.input.required) { // Handle initially empty required fields
+                 updateMsg(field.msgEl, `${field.label} is required.`, 'error');
+                 setInputValid(field.input, false);
+            }
+        });
+        if(divisionSelect) validateSelect(divisionSelect, divisionMsg);
+        validateLatitude();
+        validateLongitude();
+    }
+
+    // Initialize map first, then other validations that might interact with map-set fields
+    initializeMap();
+    performInitialPageValidation();
+
+
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            console.log("Edit Station Form Submit Attempt");
+            let isFormOverallValid = true;
+
+            fieldsToValidate.forEach(field => {
+                if (!field.input) return;
+                const value = field.input.value.trim();
+                let isFieldCurrentlyFormatValid = true; // Assume true, specific checks will falsify
+                const isSameAsOriginal = (field.fieldNameDb === 'station_phone') ? (value === field.originalValue) : (value.toLowerCase() === field.originalValue.toLowerCase());
+
+                if (field.input.required && value === "") { updateMsg(field.msgEl, `${field.label} is required.`, 'error'); setInputValid(field.input, false); isFieldCurrentlyFormatValid = false; isFormOverallValid = false; }
+                else if (value.length > 0 && field.minLength && value.length < field.minLength) { updateMsg(field.msgEl, `${field.label} must be at least ${field.minLength} chars.`, 'error'); setInputValid(field.input, false); isFieldCurrentlyFormatValid = false; isFormOverallValid = false; }
+                else if (value.length > 0 && !field.formatValidator(value)) { updateMsg(field.msgEl, field.formatErrorMsg, 'error'); setInputValid(field.input, false); isFieldCurrentlyFormatValid = false; isFormOverallValid = false; }
+                
+                if (isFieldCurrentlyFormatValid && !isSameAsOriginal && field.checkUniqueness && !field.checkUniquenessIsInfo) {
+                    const validationText = field.msgEl.textContent.toLowerCase();
+                    if (validationText.includes('already in use by another record')) { isFormOverallValid = false; setInputValid(field.input, false); }
+                    else if (validationText.includes('checking...') || validationText.includes('could not check')) { isFormOverallValid = false; updateMsg(field.msgEl, 'Avail. check pending/failed.', 'error'); setInputValid(field.input, false); }
+                }
+            });
+
+            if(divisionSelect && !validateSelect(divisionSelect, divisionMsg)) isFormOverallValid = false;
+            if(!validateLatitude()) isFormOverallValid = false;
+            if(!validateLongitude()) isFormOverallValid = false;
+
+            console.log("Final form validity on submit:", isFormOverallValid);
+            if (!isFormOverallValid) {
+                console.log("Edit Form is NOT valid. Preventing submission."); event.preventDefault();
+                const firstInvalid = form.querySelector('.invalid, input:invalid, select:invalid');
+                if (firstInvalid) {
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => firstInvalid.focus({ preventScroll: true }), 100);
+                }
+            } else {
+                console.log("Edit Form is valid. Submitting.");
+                if(submitButton) { submitButton.disabled = true; submitButton.value = "Updating..."; }
+            }
+        });
+    } else {
+        console.error("Edit Form not found, submit listener not attached.");
+    }
+    console.log("(EDIT) Event listeners attached.");
+});
+</script>
+{% endblock %}

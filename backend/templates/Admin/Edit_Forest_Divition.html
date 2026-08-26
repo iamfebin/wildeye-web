@@ -1,0 +1,345 @@
+{% extends "Admin/admin_base.html" %}
+
+{% block title %}Admin Edit Forest Division - {{ division.name }}{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Re-using styles from Add_Forest_Divition.html for consistency */
+    .form-content-wrapper {
+        background-color: #ffffff;
+        padding: 30px 40px;
+        margin-top: 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transition: all 0.3s ease-in-out;
+    }
+    .form-content-wrapper:hover {
+        box-shadow: 0 12px 35px rgba(0,0,0,0.12);
+    }
+    .styled-form-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0 15px;
+        margin-top: 10px;
+    }
+    .styled-form-table td {
+        padding: 10px;
+        border-bottom: none;
+        vertical-align: middle;
+    }
+    .styled-form-table td:first-child {
+        font-weight: 600;
+        color: #343a40;
+        width: 25%;
+        min-width: 150px;
+        text-align: left;
+        padding-right: 20px;
+    }
+    .input-group {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+    .styled-form-table input[type="text"] {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1em;
+        color: #495057;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .styled-form-table input[type="text"]:focus {
+        border-color: #007bff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .styled-form-table input[type="text"].invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    .styled-form-table input[type="text"].valid {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    .styled-form-table input[type="submit"] {
+        background-image: linear-gradient(to right, #007bff, #0056b3); /* Blue gradient for Update */
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.05em;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+    .styled-form-table input[type="submit"]:hover {
+        background-image: linear-gradient(to right, #0056b3, #004085);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        transform: translateY(-2px);
+    }
+    .submit-cell { text-align: left; padding-top: 20px !important; }
+    .validation-message { font-size: 0.875em; margin-top: 8px; display: block; height: 1.2em; font-weight: 500; }
+    .validation-message.error { color: #dc3545; }
+    .validation-message.success { color: #28a745; }
+    .validation-message.checking { color: #007bff; }
+    .validation-message.info { color: #17a2b8; } /* Info color for "current name" message */
+</style>
+{% endblock %}
+
+{% block content %}
+    <div id="top-bar">
+        <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+        <h1>Edit Forest Division</h1>
+    </div>
+
+    <div class="form-content-wrapper">
+        <form id="editDivisionForm" name="editDivisionForm" method="post" action="{% url 'admin_edit_forest_divition' id=division.id %}">
+          {% csrf_token %}
+          <input type="hidden" id="divisionId" value="{{ division.id }}">
+          <input type="hidden" id="originalDivisionName" value="{{ division.name|escapejs }}">
+
+          <table class="styled-form-table">
+            <tr>
+              <td><label for="divisionName">Division Name</label></td>
+              <td>
+                <div class="input-group">
+                    <input type="text" name="name" id="divisionName" value="{{ division.name }}" required autocomplete="off"/>
+                    <span id="nameValidationMessage" class="validation-message"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td><label for="divisionPlace">Place</label></td>
+              <td>
+                <div class="input-group">
+                    <input type="text" name="place" id="divisionPlace" value="{{ division.place }}" required autocomplete="off"/>
+                    <span id="placeValidationMessage" class="validation-message"></span>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td></td> {# Empty cell for alignment #}
+              <td class="submit-cell">
+                  <input type="submit" id="submitButton" value="Update Division" />
+              </td>
+            </tr>
+          </table>
+        </form>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("DOM Content Loaded. Initializing EDIT script (place no numbers, non-unique informative check)...");
+
+    const divisionNameInput = document.getElementById('divisionName');
+    const nameValidationMessage = document.getElementById('nameValidationMessage');
+    const divisionPlaceInput = document.getElementById('divisionPlace');
+    const placeValidationMessage = document.getElementById('placeValidationMessage');
+    const editDivisionForm = document.getElementById('editDivisionForm');
+    const originalDivisionName = document.getElementById('originalDivisionName').value;
+    const originalPlaceValue = divisionPlaceInput.value.trim();
+    const divisionId = document.getElementById('divisionId').value;
+
+    if (!divisionNameInput || !nameValidationMessage || !divisionPlaceInput || !placeValidationMessage || !editDivisionForm || !document.getElementById('originalDivisionName') || !document.getElementById('divisionId')) {
+        console.error("EDIT Script: One or more essential form elements or hidden fields are missing!");
+        return;
+    }
+    console.log("EDIT Script: All essential form elements found. Originals - Name:", originalDivisionName, "Place:", originalPlaceValue, "ID:", divisionId);
+
+    let nameDebounceTimer;
+    let isDivisionNameFormatValid = true;
+    let isDivisionNameAvailable = true;
+
+    let placeDebounceTimer;
+    let isPlaceFormatValid = true;
+    // isPlaceAvailable flag not used to block submission for place.
+
+    function updateValidationMessage(element, message, type) {
+        if (!element) { console.warn("updateValidationMessage: null element."); return; }
+        element.textContent = message;
+        element.className = 'validation-message ' + type;
+    }
+
+    function setInputValidity(inputElement, isValid, isInfo = false) {
+        if (!inputElement) { console.warn("setInputValidity: null inputElement."); return; }
+        inputElement.classList.remove('valid', 'invalid', 'info-input');
+        if (isInfo) {
+            inputElement.classList.add('info-input');
+        } else if (isValid === true) {
+            inputElement.classList.add('valid');
+        } else if (isValid === false) {
+            inputElement.classList.add('invalid');
+        }
+    }
+
+    const divisionNameRegex = /^\s*([\w\s'-]+?)\s+(Division)(\s+[\w\s'-]*)?\s*$/i;
+    const hasNumberRegex = /\d/; // Regex to check for any digit
+
+    function validateNameFormatOnly(name) {
+        console.log(`EDIT Name Format: "${name}"`);
+        if (name.length === 0) { updateValidationMessage(nameValidationMessage, 'Name is required.', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return false; }
+        if (name.length < 3) { updateValidationMessage(nameValidationMessage, 'Name must be at least 3 characters.', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return false; }
+        if (!divisionNameRegex.test(name)) { updateValidationMessage(nameValidationMessage, 'Format: "Name Division OptionalSuffix".', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return false; }
+        console.log("EDIT Name Format: Valid."); isDivisionNameFormatValid = true; return true;
+    }
+
+    function checkNameAvailability(name) {
+        const standardizedName = name.replace(/division/i, 'Division');
+        console.log(`EDIT Name Availability: "${standardizedName}", excluding ID: ${divisionId}`);
+        if (standardizedName.toLowerCase() === originalDivisionName.toLowerCase()) {
+            console.log("EDIT Name: Same as original.");
+            // Ensure format of original is also considered valid for this path
+            if (validateNameFormatOnly(name)) { // Re-check format for original if needed
+                updateValidationMessage(nameValidationMessage, 'This is the current name.', 'info');
+                setInputValidity(divisionNameInput, true, true);
+            }
+            isDivisionNameAvailable = true; isDivisionNameFormatValid = true; return;
+        }
+        updateValidationMessage(nameValidationMessage, 'Checking availability...', 'checking');
+        setInputValidity(divisionNameInput, null); isDivisionNameAvailable = false;
+        // *** MODIFIED LINE BELOW ***
+        fetch(`{% url 'admin_check_field_exists' %}?model_name=forest_division&field_name=name&field_value=${encodeURIComponent(standardizedName)}&exclude_id=${divisionId}`)
+            .then(response => { if (!response.ok) throw new Error(`Network error: ${response.statusText}`); return response.json(); })
+            .then(data => {
+                console.log("EDIT Name Check Response:", data);
+                if (data.error) { updateValidationMessage(nameValidationMessage, data.error, 'error'); setInputValidity(divisionNameInput, false); }
+                else if (data.exists) { updateValidationMessage(nameValidationMessage, 'This name is used by another division.', 'error'); setInputValidity(divisionNameInput, false); }
+                else { updateValidationMessage(nameValidationMessage, 'Name is available!', 'success'); setInputValidity(divisionNameInput, true); isDivisionNameAvailable = true; }
+            })
+            .catch(error => {
+                console.error('EDIT Name Check Error:', error);
+                updateValidationMessage(nameValidationMessage, 'Could not check name. ' + error.message, 'error');
+                setInputValidity(divisionNameInput, false);
+            });
+    }
+
+    divisionNameInput.addEventListener('input', function () {
+        const name = divisionNameInput.value.trim();
+        console.log(`EDIT Name Input: "${name}"`);
+        clearTimeout(nameDebounceTimer); isDivisionNameAvailable = false;
+        if (!validateNameFormatOnly(name)) { setInputValidity(divisionNameInput, false); return; }
+        if (name === "") { updateValidationMessage(nameValidationMessage, 'Name is required.', 'error'); setInputValidity(divisionNameInput, false); isDivisionNameFormatValid = false; return; }
+        nameDebounceTimer = setTimeout(() => { checkNameAvailability(name); }, 700);
+    });
+
+    function validatePlaceFormatOnly(place) {
+        console.log(`EDIT Place Format (no numbers): "${place}"`);
+        if (place.length === 0) { updateValidationMessage(placeValidationMessage, 'Place is required.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return false; }
+        if (place.length < 2) { updateValidationMessage(placeValidationMessage, 'Place must be at least 2 characters.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return false; }
+        if (hasNumberRegex.test(place)) { updateValidationMessage(placeValidationMessage, 'Place cannot contain numbers.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return false; }
+        console.log("EDIT Place Format (no numbers): Valid."); isPlaceFormatValid = true; return true;
+    }
+
+    function checkPlaceExistenceInfo(place) {
+        console.log(`EDIT Place Existence Info: "${place}", excluding ID: ${divisionId}`);
+        if (place.toLowerCase() === originalPlaceValue.toLowerCase()) {
+            console.log("EDIT Place: Same as original.");
+            // Ensure format of original is also considered valid for this path
+            if (validatePlaceFormatOnly(place)){ // Re-check format for original
+                updateValidationMessage(placeValidationMessage, 'This is the current place.', 'info');
+                setInputValidity(divisionPlaceInput, true, true);
+            } // else format error from validatePlaceFormatOnly will show
+            isPlaceFormatValid = true; /* assume original place had valid format, or validatePlaceFormatOnly will override */ return;
+        }
+        updateValidationMessage(placeValidationMessage, 'Checking...', 'checking');
+        setInputValidity(divisionPlaceInput, null);
+        // *** MODIFIED LINE BELOW ***
+        fetch(`{% url 'admin_check_field_exists' %}?model_name=forest_division&field_name=place&field_value=${encodeURIComponent(place)}&exclude_id=${divisionId}`)
+            .then(response => { if (!response.ok) throw new Error(`Network error: ${response.statusText}`); return response.json(); })
+            .then(data => {
+                console.log("EDIT Place Check Response (Info):", data);
+                if (data.error) { updateValidationMessage(placeValidationMessage, data.error, 'error'); setInputValidity(divisionPlaceInput, false); }
+                else if (data.exists) { updateValidationMessage(placeValidationMessage, 'This place is used by another division. You can still use it.', 'info'); setInputValidity(divisionPlaceInput, true, true); }
+                else { updateValidationMessage(placeValidationMessage, 'Place is valid.', 'success'); setInputValidity(divisionPlaceInput, true); }
+            })
+            .catch(error => {
+                console.error('EDIT Place Check Error (Info):', error);
+                updateValidationMessage(placeValidationMessage, 'Could not check place. ' + error.message, 'error');
+                setInputValidity(divisionPlaceInput, false);
+            });
+    }
+
+    divisionPlaceInput.addEventListener('input', function() {
+        const place = divisionPlaceInput.value.trim();
+        console.log(`EDIT Place Input (no numbers): "${place}"`);
+        clearTimeout(placeDebounceTimer);
+        if (!validatePlaceFormatOnly(place)) {
+            setInputValidity(divisionPlaceInput, false); // Message already set by validatePlaceFormatOnly
+            return;
+        }
+        if (place === "") { updateValidationMessage(placeValidationMessage, 'Place is required.', 'error'); setInputValidity(divisionPlaceInput, false); isPlaceFormatValid = false; return; }
+        placeDebounceTimer = setTimeout(() => { checkPlaceExistenceInfo(place); }, 700);
+    });
+
+    function performInitialValidation() {
+        console.log("(EDIT) Performing initial validation (place no numbers, non-unique informative).");
+        const initialName = divisionNameInput.value.trim();
+        if (validateNameFormatOnly(initialName)) { // This sets isDivisionNameFormatValid
+            if (initialName.replace(/division/i, 'Division').toLowerCase() === originalDivisionName.toLowerCase()) {
+                updateValidationMessage(nameValidationMessage, 'This is the current name.', 'info');
+                setInputValidity(divisionNameInput, true, true); isDivisionNameAvailable = true;
+            } else { updateValidationMessage(nameValidationMessage, '', ''); setInputValidity(divisionNameInput, null); isDivisionNameAvailable = false; }
+        } else { isDivisionNameAvailable = false; } // if format is bad, it's not available
+
+        const initialPlace = divisionPlaceInput.value.trim();
+        if (validatePlaceFormatOnly(initialPlace)) { // This sets isPlaceFormatValid
+            if (initialPlace.toLowerCase() === originalPlaceValue.toLowerCase()) {
+                updateValidationMessage(placeValidationMessage, 'This is the current place.', 'info');
+                setInputValidity(divisionPlaceInput, true, true);
+            } else { updateValidationMessage(placeValidationMessage, '', ''); setInputValidity(divisionPlaceInput, null); }
+        }
+        // No else needed for place availability flag as it's informational
+        console.log("(EDIT) Initial flags - NameFormat:", isDivisionNameFormatValid, "NameAvailable:", isDivisionNameAvailable, "PlaceFormat:", isPlaceFormatValid);
+    }
+    performInitialValidation();
+
+    editDivisionForm.addEventListener('submit', function(event) {
+        console.log("(EDIT) Form Submit Attempt (Place no numbers, non-unique informative).");
+        const nameOnSubmit = divisionNameInput.value.trim();
+        const placeOnSubmit = divisionPlaceInput.value.trim();
+        const standardizedNameOnSubmit = nameOnSubmit.replace(/division/i, 'Division');
+
+        const isNameFormatValidOnSubmit = validateNameFormatOnly(nameOnSubmit);
+        const isPlaceFormatValidOnSubmit = validatePlaceFormatOnly(placeOnSubmit);
+        let finalFormIsValid = true;
+
+        if (!isNameFormatValidOnSubmit) { finalFormIsValid = false; }
+        else { // Name format is OK
+            if (standardizedNameOnSubmit.toLowerCase() !== originalDivisionName.toLowerCase()) { // Name changed
+                if (!isDivisionNameAvailable) { // And it's not available
+                    console.log("(EDIT) Name changed and not available on submit.");
+                    updateValidationMessage(nameValidationMessage, 'Name changed and is not available or check pending.', 'error');
+                    setInputValidity(divisionNameInput, false); finalFormIsValid = false;
+                }
+            } // If name is same as original, it's considered available.
+        }
+
+        if (!isPlaceFormatValidOnSubmit) { // Only format (incl. no-numbers) blocks place
+            console.log("(EDIT) Place format validation failed on submit.");
+            setInputValidity(divisionPlaceInput, false); // Message already set
+            finalFormIsValid = false;
+        }
+
+        if (!finalFormIsValid) {
+            console.log("(EDIT) Form is NOT valid. Preventing submission.");
+            event.preventDefault();
+            if (!isNameFormatValidOnSubmit || (standardizedNameOnSubmit.toLowerCase() !== originalDivisionName.toLowerCase() && !isDivisionNameAvailable)) { divisionNameInput.focus(); }
+            else if (!isPlaceFormatValidOnSubmit) { divisionPlaceInput.focus(); }
+        } else {
+            console.log("(EDIT) Form is valid. Standardizing name and allowing submission.");
+            divisionNameInput.value = standardizedNameOnSubmit;
+        }
+    });
+    console.log("(EDIT) Event listeners attached (Place no numbers, non-unique informative).");
+});
+</script>
+{% endblock %}

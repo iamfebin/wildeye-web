@@ -1,0 +1,109 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Confirm Delete Reply - WildEye Officer{% endblock title %}
+
+{% block page_title %}Confirm Delete Reply{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    /* Custom styles for this confirmation page */
+    .confirmation-card {
+        border-radius: 0.75rem; /* More rounded */
+        /* border-color: #dc3545; /* Optional: Red border for emphasis */
+    }
+
+    .complaint-summary-display {
+        background-color: #f8f9fa; /* Light grey */
+        border: 1px solid #e9ecef; /* Softer border */
+        border-radius: 0.375rem; /* Standard Bootstrap rounding */
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .complaint-summary-display p {
+        margin-bottom: 0.5rem;
+        font-size: 0.95em;
+    }
+    .complaint-summary-display p:last-child {
+        margin-bottom: 0;
+    }
+    .complaint-summary-display strong {
+        color: #343a40;
+    }
+    .complaint-summary-display .reply-text {
+        font-style: italic;
+        color: #0d6efd; /* Blue for the reply text */
+        display: block; /* Ensure it takes its own line if long */
+        margin-top: 0.25rem;
+    }
+    .complaint-summary-display .no-reply-text {
+        font-style: italic;
+        color: #6c757d; /* Muted for no reply */
+    }
+
+    .confirmation-actions {
+        display: flex;
+        justify-content: center; /* Center buttons */
+        gap: 0.75rem; /* Space between buttons */
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef; /* Separator line */
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+
+            <div class="card shadow-sm confirmation-card">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.2em;"></i>
+                        Confirm Deletion
+                    </h5>
+                </div>
+                <div class="card-body p-4 text-center"> {# Centered text for the main prompt #}
+                    <p class="lead mb-3">
+                        Are you sure you want to delete the reply for the complaint detailed below?
+                    </p>
+                    <p class="text-muted">This action cannot be undone.</p>
+
+                    <div class="complaint-summary-display text-start"> {# Text-start for summary content #}
+                        <p><strong><i class="bi bi-person-fill me-1 text-secondary"></i>User:</strong>
+                            {% if complaint.USER %}
+                                {{ complaint.USER.first_name }} {{ complaint.USER.last_name }}
+                            {% else %}
+                                Unknown User
+                            {% endif %}
+                        </p>
+                        <p><strong><i class="bi bi-chat-left-dots-fill me-1 text-secondary"></i>Complaint:</strong> {{ complaint.complaint|truncatewords:20 }}</p>
+                        <p><strong><i class="bi bi-reply-all-fill me-1 text-secondary"></i>Current Reply:</strong>
+                            {% if complaint.reply %}
+                                <span class="reply-text">"{{ complaint.reply|truncatewords:20 }}"</span>
+                            {% else %}
+                                <span class="no-reply-text">No reply exists for this complaint.</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <form method="post" class="mt-2">
+                        {% csrf_token %}
+                        <div class="confirmation-actions">
+                            <a href="{% url 'forest_officer_view_user_complaints' %}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4 py-2">
+                                <i class="bi bi-x-circle-fill me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger rounded-pill shadow-sm px-4 py-2">
+                                <i class="bi bi-trash3-fill me-2"></i>Yes, Delete Reply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

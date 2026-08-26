@@ -1,0 +1,528 @@
+{% extends 'Forest Officer/officer_base.html' %}
+{% load static %}
+
+{% block title %}Trekking Request #{{ request_obj.id }} - WildEye Officer{% endblock title %}
+
+{% block page_title %}Trekking Request Details{% endblock page_title %}
+
+{% block extra_head %}
+    <!-- Flatpickr CSS for beautiful date/time pickers -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        /* Custom styles for a more polished look */
+        .summary-card .list-group-item {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .summary-card .list-group-item:last-child {
+            border-bottom: none;
+        }
+        .summary-card-icon {
+            color: var(--bs-primary);
+            font-size: 1.2rem;
+            width: 30px;
+        }
+        .detail-value {
+            font-weight: 500;
+        }
+        .card-header-icon {
+            font-size: 1.2rem;
+        }
+        .blockquote-custom {
+            border-left: 4px solid #e9ecef;
+            padding-left: 1rem;
+            font-style: italic;
+            color: #495057;
+        }
+    </style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="row">
+
+    <!-- Main Content Column (75%) -->
+    <div class="col-lg-8">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Trekking Details Card -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-light d-flex align-items-center">
+                <i class="bi bi-compass-fill me-2 card-header-icon text-secondary"></i>
+                <h5 class="mb-0">Trekking Details</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Destination:</dt>
+                    <dd class="col-sm-8 detail-value">{{ request_obj.destination }}</dd>
+
+                    <dt class="col-sm-4">Purpose:</dt>
+                    <dd class="col-sm-8 detail-value">{{ request_obj.purpose }}</dd>
+
+                    <dt class="col-sm-4">Requested Period:</dt>
+                    <dd class="col-sm-8 detail-value">{{ request_obj.start_date|date:"M d, Y" }} ({{ request_obj.start_time }}) to {{ request_obj.end_date|date:"M d, Y" }} ({{ request_obj.end_time }})</dd>
+
+                    <dt class="col-sm-4">Number of Trekkers:</dt>
+                    <dd class="col-sm-8 detail-value">{{ request_obj.trekkers_count }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Action/Status Section -->
+        {% if request_obj.status == 'Pending' %}
+        <div class="card shadow mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="bi bi-pencil-square me-2 card-header-icon text-primary"></i>
+                <h5 class="mb-0">Review & Action</h5>
+            </div>
+            <div class="card-body">
+                <!-- MODIFIED: Added id="review-form" to the form -->
+                <form method="post" action="{% url 'officer_trekking_request_detail' request_obj.id %}" id="review-form">
+                    {% csrf_token %}
+                    <p class="form-text">Review the request and issue a digital pass. The pass validity dates can be adjusted.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="valid_from" class="form-label fw-bold">Pass Valid From:</label>
+                            <input type="text" class="form-control" id="valid_from" name="valid_from" value="{{ initial_valid_from|default_if_none:'' }}" placeholder="Select start date & time" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="valid_to" class="form-label fw-bold">Pass Valid To:</label>
+                            <input type="text" class="form-control" id="valid_to" name="valid_to" value="{{ initial_valid_to|default_if_none:'' }}" placeholder="First, select a start date" required>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label for="instructions" class="form-label fw-bold">Instructions for Trekker:</label>
+                        <textarea id="instructions" name="instructions" class="form-control" rows="5" required placeholder="e.g., Follow designated trails. Do not litter. Report any wildlife sightings to the base camp...">{{ initial_instructions|default_if_none:'' }}</textarea>
+                    </div>
+                    <div class="mt-3">
+                        <label for="officer_notes" class="form-label fw-bold">Internal Officer Notes (Optional):</label>
+                        <textarea id="officer_notes" name="officer_notes" class="form-control" rows="3" placeholder="Notes for internal records, not visible to the user.">{{ request_obj.officer_notes|default:"" }}</textarea>
+                    </div>
+                    <div class="d-flex justify-content-end align-items-center gap-2 mt-4 border-top pt-3">
+                        <!-- MODIFIED: Added id="reject-btn" -->
+                        <button type="submit" name="action" value="reject" class="btn btn-outline-danger rounded-pill px-4" id="reject-btn">
+                            <i class="bi bi-x-circle me-1"></i>Reject
+                        </button>
+                        <!-- MODIFIED: Added id="approve-btn" -->
+                        <button type="submit" name="action" value="approve" class="btn btn-success rounded-pill px-4 py-2" id="approve-btn">
+                            <i class="bi bi-check-circle-fill me-2"></i>Approve & Issue Pass
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% elif request_obj.status == 'Approved' and current_pass %}
+        <div class="card border-success shadow mb-4">
+            <div class="card-header bg-success bg-gradient text-white d-flex align-items-center">
+                <i class="bi bi-patch-check-fill me-2 card-header-icon"></i>
+                <h5 class="mb-0">Digital Pass Issued</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Valid From:</dt>
+                    <dd class="col-sm-9 detail-value">{{ current_pass.valid_from|date:"M d, Y, h:i A" }}</p>
+                    <dt class="col-sm-3">Valid To:</dt>
+                    <dd class="col-sm-9 detail-value">{{ current_pass.valid_to|date:"M d, Y, h:i A" }}</p>
+                </dl>
+                <h6 class="mt-3 fw-bold">Instructions Provided:</h6>
+                <blockquote class="blockquote-custom bg-light p-3 rounded">
+                    <p class="mb-0">{{ current_pass.instructions }}</p>
+                </blockquote>
+                {% if current_pass.pass_pdf %}
+                    <a href="{{ current_pass.pass_pdf.url }}" target="_blank" class="btn btn-primary rounded-pill mt-3">
+                        <i class="bi bi-download me-2"></i>Download Digital Pass PDF
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif request_obj.status == 'Rejected' %}
+        <div class="card border-danger shadow mb-4">
+            <div class="card-header bg-danger bg-gradient text-white d-flex align-items-center">
+                <i class="bi bi-exclamation-octagon-fill me-2 card-header-icon"></i>
+                <h5 class="mb-0">Request Rejected</h5>
+            </div>
+            <div class="card-body">
+                <p>This request was rejected on <strong>{{ request_obj.reviewed_at|date:"M d, Y" }}</strong>. No pass was issued.</p>
+                <h6 class="mt-3 fw-bold">Officer's Notes:</h6>
+                <blockquote class="blockquote-custom bg-light p-3 rounded">
+                    <p class="mb-0">{{ request_obj.officer_notes|default:"No notes were provided." }}</p>
+                </blockquote>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Right Summary Column (25%) -->
+    <div class="col-lg-4">
+        <div class="card shadow summary-card mb-4" style="position: sticky; top: 1rem;">
+            <div class="card-header bg-white text-center">
+                <h5 class="mb-0">Request #{{ request_obj.id }}</h5>
+                <p class="mb-0 text-muted">Submitted on {{ request_obj.requested_at|date:"M d, Y" }}</p>
+            </div>
+            <div class="card-body p-2">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item text-center">
+                        <h6 class="text-muted mb-1">Status</h6>
+                        <span class="badge fs-6 rounded-pill
+                            {% if request_obj.status == 'Pending' %}bg-warning text-dark
+                            {% elif request_obj.status == 'Approved' %}bg-success
+                            {% elif request_obj.status == 'Rejected' %}bg-danger
+                            {% endif %}">
+                            <i class="bi bi-clock-history me-1"></i> {{ request_obj.status }}
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-person-circle summary-card-icon me-3"></i>
+                        <div>
+                            <h6 class="mb-0 text-muted">Requester</h6>
+                            <span class="detail-value">{{ request_obj.full_name }}</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-telephone-fill summary-card-icon me-3"></i>
+                        <div>
+                            <h6 class="mb-0 text-muted">Phone</h6>
+                            <span class="detail-value">{{ request_obj.phone }}</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-envelope-fill summary-card-icon me-3"></i>
+                        <div>
+                            <h6 class="mb-0 text-muted">Email</h6>
+                            <span class="detail-value">{{ request_obj.email }}</span>
+                        </div>
+                    </li>
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text-fill summary-card-icon me-3"></i>
+                        <div>
+                            <h6 class="mb-0 text-muted">ID Card</h6>
+                            {% if request_obj.id_card_pdf %}
+                                <a href="{{ request_obj.id_card_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> View PDF
+                                </a>
+                            {% else %}
+                                <span class="text-muted fst-italic">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% if request_obj.reviewed_by_officer %}
+                    <li class="list-group-item d-flex align-items-center">
+                        <i class="bi bi-person-check-fill summary-card-icon me-3"></i>
+                        <div>
+                            <h6 class="mb-0 text-muted">Reviewed By</h6>
+                            <span class="detail-value">{{ request_obj.reviewed_by_officer.first_name }} {{ request_obj.reviewed_by_officer.last_name }}</span>
+                        </div>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="{% url 'officer_trekking_requests_list' %}" class="btn btn-secondary rounded-pill">
+        <i class="bi bi-arrow-left-circle me-2"></i>Back to All Requests
+    </a>
+</div>
+{% endblock content %}
+
+
+{% block extra_scripts %}
+    <!-- Flatpickr JS for beautiful date/time pickers -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if the form elements exist before running the script
+            const reviewForm = document.querySelector("#review-form");
+            
+            if (reviewForm) {
+                // --- Initialize Date Pickers ---
+                const fromDateInput = document.querySelector("#valid_from");
+                const toDateInput = document.querySelector("#valid_to");
+                const instructionsInput = document.querySelector("#instructions");
+
+                const commonOptions = {
+                    enableTime: true,
+                    dateFormat: "Y-m-d H:i",
+                    altInput: true,
+                    altFormat: "F j, Y at h:i K",
+                    time_24hr: false,
+                };
+
+                const toPicker = flatpickr(toDateInput, { ...commonOptions });
+                toPicker.input.disabled = true;
+
+                const fromPicker = flatpickr(fromDateInput, {
+                    ...commonOptions,
+                    minDate: "today",
+                    onChange: function(selectedDates, dateStr, instance) {
+                        if (selectedDates.length > 0) {
+                            const fromDate = selectedDates[0];
+                            const minToDate = new Date(fromDate);
+                            minToDate.setHours(minToDate.getHours() + 1);
+
+                            toPicker.input.disabled = false;
+                            toDateInput.placeholder = "Select end date & time";
+                            toPicker.set('minDate', minToDate);
+
+                            if (toPicker.selectedDates.length > 0 && toPicker.selectedDates[0] < minToDate) {
+                                toPicker.clear();
+                            }
+                        }
+                    },
+                });
+
+                // --- NEW: Dynamic Form Validation Logic ---
+                const approveBtn = document.querySelector("#approve-btn");
+                const rejectBtn = document.querySelector("#reject-btn");
+
+                // Fields that are only required for approval
+                const approvalFields = [fromDateInput, toDateInput, instructionsInput];
+
+                rejectBtn.addEventListener('click', function() {
+                    // When rejecting, remove the 'required' attribute from approval-specific fields
+                    approvalFields.forEach(field => field.removeAttribute('required'));
+                });
+
+                approveBtn.addEventListener('click', function() {
+                    // When approving, ensure the 'required' attribute is set
+                    approvalFields.forEach(field => field.setAttribute('required', 'required'));
+                });
+            }
+        });
+    </script>
+{% endblock extra_scripts %}
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trekking Request Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 900px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 25px; }
+        .messages { list-style: none; padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+        .messages li { margin-bottom: 5px; padding: 8px 12px; border-radius: 4px; }
+        .messages .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .messages .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .messages .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .messages .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+
+        .detail-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .detail-card h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+        .detail-card p {
+            margin-bottom: 8px;
+        }
+        .detail-card strong {
+            display: inline-block;
+            width: 150px; /* Align labels */
+        }
+        .status-pending { color: orange; font-weight: bold; }
+        .status-approved { color: green; font-weight: bold; }
+        .status-rejected { color: red; font-weight: bold; }
+        .id-card-link {
+            display: inline-block;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .id-card-link:hover {
+            background-color: #0056b3;
+        }
+        .form-section {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .form-section h4 {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="datetime-local"],
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .action-buttons button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .action-buttons .approve-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        .action-buttons .approve-btn:hover {
+            background-color: #218838;
+        }
+        .action-buttons .reject-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .action-buttons .reject-btn:hover {
+            background-color: #c82333;
+        }
+        .pass-info {
+            background-color: #e9f7ef;
+            border: 1px solid #d4edda;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #155724;
+        }
+        .pass-info a {
+            color: #155724;
+            text-decoration: underline;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 15px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .back-link:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="mb-4">Trekking Request #{{ request_obj.id }} Details</h2>
+
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="detail-card">
+            <h3>Request Information</h3>
+            <p><strong>Status:</strong> <span class="
+                {% if request_obj.status == 'Pending' %}status-pending
+                {% elif request_obj.status == 'Approved' %}status-approved
+                {% elif request_obj.status == 'Rejected' %}status-rejected
+                {% endif %}">
+                {{ request_obj.status }}
+            </span></p>
+            <p><strong>Requested by:</strong> {{ request_obj.full_name }} ({{ request_obj.user.REGULAR_LOGIN.username }})</p>
+            <p><strong>Contact:</strong> {{ request_obj.phone }} | {{ request_obj.email }}</p>
+            <p><strong>Number of Trekkers:</strong> {{ request_obj.trekkers_count }}</p>
+            <p><strong>Destination:</strong> {{ request_obj.destination }}</p>
+            <p><strong>Purpose:</strong> {{ request_obj.purpose }}</p>
+            <p><strong>Requested Period:</strong> {{ request_obj.start_date|date:"M d, Y" }} ({{ request_obj.start_time }}) to {{ request_obj.end_date|date:"M d, Y" }} ({{ request_obj.end_time }})</p>
+            <p><strong>Submitted On:</strong> {{ request_obj.requested_at|date:"M d, Y H:i" }}</p>
+            {% if request_obj.id_card_pdf %}
+                <p><strong>ID Card:</strong> <a href="{{ request_obj.id_card_pdf.url }}" target="_blank" class="id-card-link">View ID Card PDF</a></p>
+            {% else %}
+                <p><strong>ID Card:</strong> Not provided</p>
+            {% endif %}
+
+            {% if request_obj.reviewed_by_officer %}
+                <p><strong>Reviewed by:</strong> {{ request_obj.reviewed_by_officer.first_name }} {{ request_obj.reviewed_by_officer.last_name }}</p>
+                <p><strong>Reviewed at:</strong> {{ request_obj.reviewed_at|date:"M d, Y H:i" }}</p>
+                <p><strong>Officer Notes:</strong> {{ request_obj.officer_notes|default:"N/A" }}</p>
+            {% endif %}
+        </div>
+
+        {% if request_obj.status == 'Pending' %}
+        <div class="form-section">
+            <h4>Review Request</h4>
+            <form method="post" action="{% url 'officer_trekking_request_detail' request_obj.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="officer_notes">Officer Notes (Optional):</label>
+                    <textarea id="officer_notes" name="officer_notes" rows="3">{{ request_obj.officer_notes|default:"" }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="valid_from">Pass Valid From:</label>
+                    <input type="datetime-local" id="valid_from" name="valid_from" value="{{ initial_valid_from|default_if_none:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="valid_to">Pass Valid To:</label>
+                    <input type="datetime-local" id="valid_to" name="valid_to" value="{{ initial_valid_to|default_if_none:'' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="instructions">Instructions for Trekker:</label>
+                    <textarea id="instructions" name="instructions" rows="5" required>{{ initial_instructions|default_if_none:'' }}</textarea>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" name="action" value="approve" class="approve-btn">Approve & Issue Pass</button>
+                    <button type="submit" name="action" value="reject" class="reject-btn">Reject Request</button>
+                </div>
+            </form>
+        </div>
+        {% elif request_obj.status == 'Approved' and current_pass %}
+        <div class="pass-info">
+            <h4>Digital Pass Issued!</h4>
+            <p><strong>Pass Issued by:</strong> {{ current_pass.issued_by.first_name }} {{ current_pass.issued_by.last_name }}</p>
+            <p><strong>Valid From:</strong> {{ current_pass.valid_from|date:"M d, Y H:i" }}</p>
+            <p><strong>Valid To:</strong> {{ current_pass.valid_to|date:"M d, Y H:i" }}</p>
+            <p><strong>Instructions:</strong> {{ current_pass.instructions }}</p>
+            {% if current_pass.pass_pdf %}
+                <p><a href="{{ current_pass.pass_pdf.url }}" target="_blank">Download Digital Pass PDF</a></p>
+            {% else %}
+                <p>PDF not generated for this pass.</p>
+            {% endif %}
+        </div>
+        {% elif request_obj.status == 'Rejected' %}
+        <div class="form-section">
+            <h4>Request Rejected</h4>
+            <p>This request was rejected. No pass was issued.</p>
+            <p><strong>Officer Notes:</strong> {{ request_obj.officer_notes|default:"No notes." }}</p>
+        </div>
+        {% endif %}
+
+        <div class="mt-4">
+            <a href="{% url 'officer_trekking_requests_list' %}" class="back-link">Back to Requests List</a>
+        </div>
+    </div>
+</body>
+</html> -->

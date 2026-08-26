@@ -1,0 +1,527 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Manage Safety Tips{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Consistent styles with previous pages */
+    #page-content-wrapper {
+        padding: 25px 30px;
+        background-color: #f4f7f6;
+    }
+
+    #top-bar h1 {
+        font-size: 2em;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .page-header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #dde2e7;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-header-actions .title-info h2 {
+        margin: 0;
+        font-size: 1.6em;
+        font-weight: 600;
+        color: #34495e;
+    }
+    .page-header-actions .title-info .item-count {
+        font-size: 0.9em;
+        color: #7f8c8d;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .actions-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary-action {
+        background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+    .btn-primary-action i {
+        margin-right: 10px;
+        font-size: 1.1em;
+    }
+    .btn-primary-action:hover, .btn-primary-action:focus {
+        background-image: linear-gradient(to right, #0056b3 0%, #003f80 100%);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border-radius: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 4px;
+        min-width: 300px;
+    }
+    .search-box input[type="text"] {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px 0 0 20px;
+        font-size: 1em;
+        flex-grow: 1;
+        outline: none;
+        color: #333;
+    }
+    .search-box input[type="text"]::placeholder { color: #95a5a6; }
+    .search-box button[type="submit"] {
+        background-color: #28a745; /* Green for search */
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 0 20px 20px 0;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    .search-box button[type="submit"] i { margin-right: 8px; }
+    .search-box button[type="submit"]:hover { background-color: #218838; }
+
+    .data-table-container {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+    }
+
+    .responsive-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .responsive-table thead th {
+        background-color: #e9edf2;
+        color: #34495e;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 18px 15px;
+        text-align: center;
+        border-bottom: 2px solid #d1d8e0;
+        white-space: nowrap;
+    }
+    .responsive-table tbody tr {
+        border-bottom: 1px solid #ecf0f1;
+        transition: background-color 0.2s ease-in-out;
+    }
+    .responsive-table tbody tr:last-child { border-bottom: none; }
+    .responsive-table tbody tr:hover { background-color: #f8f9fa; }
+    .responsive-table tbody td {
+        padding: 16px 15px;
+        color: #555;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.95em;
+    }
+    .responsive-table tbody td.text-left-align { text-align: left; }
+    .responsive-table tbody td.description-cell {
+        text-align: left;
+        white-space: normal; /* Allow wrapping */
+        word-break: break-word;
+        min-width: 200px;
+        max-width: 350px; /* Limit max width of description */
+    }
+    .tip-thumbnail {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        object-fit: cover;
+        background-color: #e9ecef; /* Placeholder bg */
+    }
+    .no-thumbnail-placeholder {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        background-color: #e9ecef;
+        display: inline-flex; /* Use inline-flex for center alignment in cell */
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+        font-size: 0.8em;
+    }
+
+    .action-button {
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        margin: 0 5px;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.25s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        min-width: 90px;
+        justify-content: center;
+    }
+    .action-button i { margin-right: 7px; font-size: 0.95em; }
+    .action-button.edit { background-color: #ffc107; color: #333; border-color: #e0a800; }
+    .action-button.edit:hover { background-color: #e0a800; transform: scale(1.05); box-shadow: 0 2px 8px rgba(224, 168, 0, 0.3); }
+    .action-button.delete { background-color: #dc3545; color: white; border-color: #c82333; }
+    .action-button.delete:hover { background-color: #c82333; transform: scale(1.05); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: #fff;
+    }
+    .empty-state i { font-size: 4em; color: #bdc3c7; margin-bottom: 20px; }
+    .empty-state p { font-size: 1.2em; color: #7f8c8d; margin-bottom: 5px; }
+    .empty-state .search-query-display { font-style: italic; color: #95a5a6; }
+
+    @media (max-width: 992px) {
+        .responsive-table thead { display: none; }
+        .responsive-table tr { display: block; margin-bottom: 20px; border: 1px solid #dde2e7; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); background-color: #fff; }
+        .responsive-table td { display: block; text-align: right !important; padding-left: 45% !important; position: relative; border-bottom: 1px dashed #ecf0f1; min-height: 40px; display: flex; align-items: center; justify-content: flex-end; }
+        .responsive-table td:last-child { border-bottom: none; }
+        .responsive-table td::before { content: attr(data-label); position: absolute; left: 15px; width: calc(45% - 30px); padding-right: 10px; white-space: nowrap; font-weight: 600; text-align: left; color: #34495e; font-size: 0.9em; top: 50%; transform: translateY(-50%); }
+        .responsive-table td.description-cell { justify-content: flex-start; text-align: left !important; padding: 10px 15px 10px 45%; }
+        .responsive-table td.thumbnail-cell { justify-content: flex-end; } /* Ensure thumbnail aligns right */
+        .responsive-table td.actions-cell { text-align: center !important; padding: 15px !important; justify-content: center; }
+        .responsive-table td.actions-cell::before { display: none; }
+    }
+    @media (max-width: 768px) {
+        #top-bar h1 { font-size: 1.6em; }
+        .page-header-actions .title-info h2 { font-size: 1.3em; }
+        .actions-toolbar { justify-content: center; }
+        .search-box { min-width: unset; width: 100%; margin-top: 10px; }
+        .btn-primary-action { width: 100%; justify-content: center; margin-top: 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="page-header-actions">
+        <div class="title-info">
+            <h2>Manage Safety Tips</h2>
+            <span class="item-count">
+                {% if tips %}
+                    {{ tips|length }} Tip{{ tips|length|pluralize }}
+                {% else %}
+                    0 Tips
+                {% endif %}
+            </span>
+        </div>
+        <div class="actions-toolbar">
+             <form id="searchForm" name="searchForm" method="post" action="{% url 'admin_view_safety_tips' %}" class="search-box">
+                {% csrf_token %}
+                <input type="text" name="search_term" placeholder="Search by Title, Category..." value="{{ search_term|default_if_none:'' }}" aria-label="Search Safety Tips" />
+                <button type="submit" name="Submit" value="Search">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            <a href="{% url 'admin_add_safety_tip' %}" class="btn-primary-action">
+                <i class="fas fa-plus-circle"></i> Add New Tip
+            </a>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if tips %}
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Thumbnail</th>
+                        <th>Title</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Content Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tip in tips %}
+                    <tr>
+                        <td data-label="ID">{{ tip.id }}</td>
+                        <td data-label="Thumbnail" class="thumbnail-cell">
+                            {% if tip.thumbnail and tip.thumbnail.url %}
+                                <img src="{{ tip.thumbnail.url }}" alt="{{ tip.title }}" class="tip-thumbnail"/>
+                            {% else %}
+                                <div class="no-thumbnail-placeholder">N/A</div>
+                            {% endif %}
+                        </td>
+                        <td data-label="Title" class="text-left-align">{{ tip.title }}</td>
+                        <td data-label="Description" class="description-cell">{{ tip.description|truncatewords_html:15 }}</td>
+                        <td data-label="Category">{{ tip.category|default:"N/A" }}</td>
+                        <td data-label="Content Type">{{ tip.get_content_type_display|default:"N/A" }}</td>
+                        <td data-label="Actions" class="actions-cell">
+                            <a href="{% url 'admin_edit_safety_tip' tip.id %}" class="action-button edit" aria-label="Edit {{ tip.title }}">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'admin_delete_safety_tip' tip.id %}" class="action-button delete"
+                               onclick="return confirm('Are you sure you want to delete safety tip: \'{{ tip.title|escapejs }}\'? This action cannot be undone.');" aria-label="Delete {{ tip.title }}">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-lightbulb"></i> {# Icon for tips/ideas #}
+                {% if search_term %}
+                    <p>No Safety Tips Found</p>
+                    <span class="search-query-display">Your search for "{{ search_term|escape }}" did not match any tips.</span>
+                {% else %}
+                    <p>No Safety Tips Available Yet</p>
+                    <span class="search-query-display">Get started by adding a new safety tip.</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    {# Removed "Back to Admin Home" link, assuming sidebar navigation handles this #}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler
+    const currentPath = window.location.pathname;
+    const safetyTipsBaseLink = document.querySelector('#sidebar ul li a[href="{% url 'admin_view_safety_tips' %}"]');
+
+    if (safetyTipsBaseLink && (currentPath === '{% url "admin_view_safety_tips" %}' || currentPath.startsWith('/admin/safety-tips/edit/') || currentPath === '{% url "admin_add_safety_tip" %}')) { // Adjust edit path prefix as needed
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        safetyTipsBaseLink.closest('li').classList.add('active-link');
+    }
+
+    // Table row animation
+    const tableRows = document.querySelectorAll('.responsive-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = 0;
+    });
+});
+
+// Ensure fadeInUp keyframes are defined
+if (!document.getElementById('fadeInUpKeyframes')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "fadeInUpKeyframes";
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }`;
+    document.head.appendChild(styleSheet);
+}
+</script>
+{% endblock %}
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Safety Tips - WildEye Admin</title>
+    <style>
+        /* Basic CSS for a clean look - integrate with your existing admin CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .action-buttons a, .action-buttons button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .action-buttons a:hover, .action-buttons button:hover {
+            background-color: #0056b3;
+        }
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+        .search-form input[type="text"] {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-form button {
+            background-color: #6c757d;
+        }
+        .search-form button:hover {
+            background-color: #5a6268;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #333;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .actions a {
+            margin-right: 10px;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .actions .edit-btn {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .actions .edit-btn:hover {
+            background-color: #e0a800;
+        }
+        .actions .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        .actions .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .no-tips {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 1.1em;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>View All Safety Tips</h2>
+
+        <div class="action-buttons">
+            <a href="{% url 'admin_add_safety_tip' %}">Add New Safety Tip</a>
+            <form action="{% url 'admin_view_safety_tips' %}" method="post" class="search-form">
+                {% csrf_token %}
+                <input type="text" name="search_term" placeholder="Search by title or category..." value="{{ search_term|default:'' }}">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        {% if tips %}
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Content Type</th>
+                    <th>Thumbnail</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tip in tips %}
+                <tr>
+                    <td>{{ tip.id }}</td>
+                    <td>{{ tip.title }}</td>
+                    <td>{{ tip.description|truncatechars:50 }}</td>
+                    <td>{{ tip.category }}</td>
+                    <td>{{ tip.get_content_type_display }}</td>
+                    <td>
+                        {% if tip.thumbnail %}
+                            <img src="{{ tip.thumbnail.url }}" alt="{{ tip.title }}" width="50" height="50" style="object-fit: cover; border-radius: 4px;">
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'admin_edit_safety_tip' tip.id %}" class="edit-btn">Edit</a>
+                        <a href="{% url 'admin_delete_safety_tip' tip.id %}" class="delete-btn" onclick="return confirm('Are you sure you want to delete this safety tip?');">Delete</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-tips">No safety tips found. Add some to get started!</p>
+        {% endif %}
+        <a href="{% url 'admin_home' %}" class="back-link">Back to Admin Home</a>
+    </div>
+</body>
+</html> -->

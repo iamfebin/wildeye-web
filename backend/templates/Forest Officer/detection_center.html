@@ -1,0 +1,393 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}AI Detection Hub - WildEye Officer{% endblock title %}
+
+{% block page_title %}AI Wildlife Detection & Image Analysis{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    .custom-card-detection {
+        border-radius: 0.85rem;
+        border: none;
+        box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .custom-card-detection .card-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: #fff;
+        padding: 1.25rem 1.5rem;
+        border-bottom: none;
+    }
+    .nav-tabs-detection {
+        border-bottom: 1px solid #e2e8f0;
+        background-color: #f8fafc;
+        padding: 0 1rem;
+    }
+    .nav-tabs-detection .nav-link {
+        color: #64748b;
+        font-weight: 500;
+        border: none;
+        padding: 1rem 1.5rem;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+        font-size: 1.05rem;
+    }
+    .nav-tabs-detection .nav-link:hover {
+        color: #0f172a;
+        border-color: #cbd5e1;
+    }
+    .nav-tabs-detection .nav-link.active {
+        color: #0d6efd;
+        background: transparent;
+        border-bottom: 3px solid #0d6efd;
+        font-weight: 600;
+    }
+    .dropzone-box {
+        border: 2px dashed #cbd5e1;
+        border-radius: 0.75rem;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        background-color: #f8fafc;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .dropzone-box:hover, .dropzone-box.dragover {
+        border-color: #0d6efd;
+        background-color: #eff6ff;
+    }
+    .dropzone-icon {
+        font-size: 2.5rem;
+        color: #0d6efd;
+        margin-bottom: 0.5rem;
+    }
+    .context-alert {
+        background-color: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+    .process-item {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .pulse-indicator {
+        width: 10px;
+        height: 10px;
+        background-color: #10b981;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+        animation: pulse-ring 1.6s infinite;
+    }
+    @keyframes pulse-ring {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    .img-preview-thumb {
+        max-height: 200px;
+        border-radius: 0.5rem;
+        border: 1px solid #cbd5e1;
+        object-fit: contain;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-2">
+
+    <!-- Messages Container -->
+    {% if messages %}
+        <div class="messages-container mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+                    <i class="bi {% if 'success' in message.tags %}bi-check-circle-fill{% elif 'error' in message.tags %}bi-exclamation-triangle-fill{% elif 'info' in message.tags %}bi-info-circle-fill{% elif 'warning' in message.tags %}bi-exclamation-circle-fill{% else %}bi-bell-fill{% endif %} me-2"></i>
+                    {% if "safe" in message.tags %}{{ message|safe }}{% else %}{{ message }}{% endif %}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Context Alert when opened from camera or report image -->
+    {% if prefill_camera_source or prefill_camera_id is not none %}
+    <div class="context-alert mb-4 d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            {% if active_mode == 'image' %}
+                <i class="bi bi-file-earmark-image-fill text-primary fs-3 me-3"></i>
+                <div>
+                    <h6 class="mb-0 fw-bold text-primary">Report Image Loaded for AI Analysis</h6>
+                    <small class="text-muted">Image Path: <code class="text-dark">{{ prefill_camera_source }}</code></small>
+                </div>
+            {% else %}
+                <i class="bi bi-camera-video-fill text-success fs-3 me-3"></i>
+                <div>
+                    <h6 class="mb-0 fw-bold text-success">Camera Selected for Detection</h6>
+                    <small class="text-muted">Assigned Camera ID: <span class="badge bg-primary">#{{ prefill_camera_id }}</span></small>
+                </div>
+            {% endif %}
+        </div>
+        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-medium">Ready</span>
+    </div>
+    {% endif %}
+
+    <!-- Main Card -->
+    <div class="card custom-card-detection mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <div>
+                <h4 class="mb-0 fw-bold text-white"><i class="bi bi-cpu-fill text-info me-2"></i>AI Wildlife Detection Hub</h4>
+                <small class="text-slate-300 opacity-75">Start live camera detection or analyze images for YOLOv8 wildlife species.</small>
+            </div>
+            <span class="badge bg-success bg-opacity-20 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                <span class="pulse-indicator me-2"></span>YOLOv8 Active
+            </span>
+        </div>
+
+        <!-- 2 Simple Navigation Tabs -->
+        <ul class="nav nav-tabs nav-tabs-detection" id="detectionCenterTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_mode != 'image' %}active{% endif %}" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera-panel" type="button" role="tab">
+                    <i class="bi bi-camera-video-fill me-2"></i>Camera Detection
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {% if active_mode == 'image' %}active{% endif %}" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-panel" type="button" role="tab">
+                    <i class="bi bi-file-earmark-play-fill me-2"></i>AI Image & Video Analysis
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content p-4" id="detectionCenterTabsContent">
+
+            <!-- TAB 1: CAMERA DETECTION (SINGLE DROPDOWN + BUTTON) -->
+            <div class="tab-pane fade {% if active_mode != 'image' %}show active{% endif %}" id="camera-panel" role="tabpanel">
+                <form method="POST" action="{% url 'start_detection_process_view' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="mode" value="live">
+                    <input type="hidden" id="camera_id" name="camera_id" value="{{ prefill_camera_id|default:'1' }}">
+                    <input type="hidden" id="camera_source" name="camera_source" value="{{ prefill_camera_source|default:'0' }}">
+
+                    <div class="mb-3">
+                        <label for="camera_select" class="form-label fw-bold text-dark fs-6">
+                            <i class="bi bi-camera-video me-2 text-primary"></i>Select Camera to Start Detection:
+                        </label>
+                        <select class="form-select form-select-lg fs-6" id="camera_select" onchange="onCameraSelectChange(this)">
+                            <option value="0" data-id="1" data-source="0" {% if prefill_camera_source == '0' or not prefill_camera_source %}selected{% endif %}>
+                                📹 Default Built-in Webcam / Local Camera (#0)
+                            </option>
+                            {% if station_cameras %}
+                                <optgroup label="Assigned Station Cameras">
+                                    {% for cam in station_cameras %}
+                                        <option value="{{ cam.camera_id }}" data-id="{{ cam.id }}" data-source="0" {% if prefill_camera_id == cam.id %}selected{% endif %}>
+                                            📡 Station Camera {{ cam.camera_id }} (DB ID: #{{ cam.id }})
+                                        </option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endif %}
+                            <option value="custom" data-id="0" data-source="">
+                                ⚙️ Custom RTSP Stream URL or Local Video File...
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Collapsible Custom Input (Shown ONLY if Custom selected) -->
+                    <div id="custom_stream_box" class="mb-3 d-none">
+                        <label for="custom_source_input" class="form-label fw-medium text-dark">
+                            <i class="bi bi-link-45deg me-1 text-primary"></i>Enter Custom RTSP Stream URL or Video File Path:
+                        </label>
+                        <input type="text" class="form-control" id="custom_source_input" 
+                               placeholder="e.g. rtsp://192.168.1.100:554/live or C:/videos/sample.mp4" 
+                               oninput="document.getElementById('camera_source').value=this.value">
+                    </div>
+
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-success btn-lg rounded-pill px-4 shadow-sm fs-6">
+                            <i class="bi bi-play-circle-fill me-2"></i>Start Camera Detection
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 2: AI IMAGE & VIDEO FILE ANALYSIS -->
+            <div class="tab-pane fade {% if active_mode == 'image' %}show active{% endif %}" id="image-panel" role="tabpanel">
+                <form method="POST" action="{% url 'start_detection_process_view' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="mode" value="image">
+                    <input type="hidden" name="camera_id" value="{{ prefill_camera_id|default:'0' }}">
+
+                    <!-- Drag & Drop Zone -->
+                    <div class="dropzone-box mb-3" id="dropzone" onclick="document.getElementById('image_file').click();">
+                        <i class="bi bi-cloud-arrow-up-fill dropzone-icon"></i>
+                        <h5 class="fw-bold mb-1 text-dark">Drag & Drop Image or Video File or Click to Browse</h5>
+                        <p class="text-muted small mb-0">Supports JPG, PNG, WEBP, MP4, AVI, MOV formats for instant AI wildlife detection</p>
+                        <input type="file" id="image_file" name="image_file" accept="image/*,video/*" class="d-none" onchange="handleFileSelect(this)">
+                    </div>
+
+                    <div id="image_preview_box" class="text-center my-3 d-none">
+                        <img id="preview_img" src="#" alt="Selected Image" class="img-preview-thumb mb-2 d-none">
+                        <video id="preview_video" src="#" controls class="img-preview-thumb mb-2 d-none"></video>
+                        <div id="file_name_display" class="text-primary small fw-bold"></div>
+                    </div>
+
+                    <!-- Existing Server File Path (for report images/videos) -->
+                    {% if prefill_camera_source %}
+                    <div class="mb-3">
+                        <label for="image_path_input" class="form-label fw-medium text-dark">
+                            <i class="bi bi-folder2-open me-1 text-primary"></i>Selected Server File Path:
+                        </label>
+                        <input type="text" class="form-control" id="image_path_input" name="camera_source" 
+                               value="{{ prefill_camera_source }}" readonly>
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4 text-end">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm fs-6">
+                            <i class="bi bi-play-circle-fill me-2"></i>Analyze File with AI
+                        </button>
+                    </div>
+                </form>
+            </div>    </div>
+
+        </div>
+    </div>
+
+    <!-- Active Processes List -->
+    <div class="card custom-card-detection mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between bg-dark text-white">
+            <div>
+                <h5 class="mb-0 fw-bold"><i class="bi bi-activity me-2 text-info"></i>Active Detection Processes</h5>
+                <small class="text-slate-300 opacity-75">Running background detection processes</small>
+            </div>
+            <button onclick="pollProcessStatus()" class="btn btn-outline-light btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh Status
+            </button>
+        </div>
+
+        <div class="card-body p-4" id="process_list_container">
+            {% if active_processes %}
+                {% for cid, data in active_processes.items %}
+                    <div class="process-item">
+                        <div class="d-flex align-items-center">
+                            <span class="pulse-indicator me-3"></span>
+                            <div>
+                                <div class="fw-bold text-dark">
+                                    Camera #{{ cid }}
+                                    <span class="badge bg-secondary ms-2">PID: {{ data.pid }}</span>
+                                </div>
+                                <small class="text-muted">Source: <code class="text-primary">{{ data.source }}</code></small>
+                            </div>
+                        </div>
+                        <div>
+                            {% if data.status == 'running' %}
+                                <form method="POST" action="{% url 'stop_detection_process_view' camera_id=cid %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">
+                                        <i class="bi bi-stop-fill me-1"></i>Stop Process
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill px-3 py-2">Terminated</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary"></i>
+                    No active detection processes currently running.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script>
+    function onCameraSelectChange(selectEl) {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        const customBox = document.getElementById('custom_stream_box');
+
+        if (selectEl.value === 'custom') {
+            customBox.classList.remove('d-none');
+            document.getElementById('camera_id').value = '0';
+            document.getElementById('camera_source').value = document.getElementById('custom_source_input').value || '';
+        } else {
+            customBox.classList.add('d-none');
+            const srcVal = selectedOpt.dataset.source || selectEl.value;
+            const idVal = selectedOpt.dataset.id || '1';
+            document.getElementById('camera_source').value = srcVal;
+            document.getElementById('camera_id').value = idVal;
+        }
+    }
+
+    // Drag & Drop Handling
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, () => dropzone.classList.remove('dragover'), false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('image_file').files = files;
+                handleFileSelect(document.getElementById('image_file'));
+            }
+        });
+    }
+
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const reader = new FileReader();
+            const imgEl = document.getElementById('preview_img');
+            const videoEl = document.getElementById('preview_video');
+            
+            reader.onload = function(e) {
+                if (file.type.startsWith('video/')) {
+                    imgEl.classList.add('d-none');
+                    videoEl.src = e.target.result;
+                    videoEl.classList.remove('d-none');
+                } else {
+                    videoEl.classList.add('d-none');
+                    imgEl.src = e.target.result;
+                    imgEl.classList.remove('d-none');
+                }
+                document.getElementById('file_name_display').textContent = 'Selected File: ' + file.name;
+                document.getElementById('image_preview_box').classList.remove('d-none');
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Status polling
+    function pollProcessStatus() {
+        fetch("{% url 'ajax_detection_status' %}")
+            .then(res => res.json())
+            .then(data => {
+                console.log("Django detection status:", data);
+            })
+            .catch(err => console.error("Error checking status:", err));
+    }
+    setInterval(pollProcessStatus, 6000);
+</script>
+{% endblock extra_scripts %}

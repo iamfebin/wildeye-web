@@ -1,0 +1,250 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Sent Notifications Log{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* ... (keep your existing styles for this page) ... */
+    #page-content-wrapper { padding: 25px 30px; background-color: #f4f7f6; }
+    #top-bar h1 { font-size: 2em; font-weight: 700; color: #2c3e50; }
+
+    .page-header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #dde2e7;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    .page-header-actions .title-info h2 { margin: 0; font-size: 1.6em; font-weight: 600; color: #34495e; }
+    .page-header-actions .title-info .item-count { font-size: 0.9em; color: #7f8c8d; margin-top: 4px; display: block; }
+
+    .actions-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 15px; /* Space between search and add button */
+        flex-wrap: wrap;
+    }
+
+    .btn-primary-action {
+        background-image: linear-gradient(to right, #17a2b8 0%, #117a8b 100%); color: white; padding: 12px 25px;
+        text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-flex; align-items: center;
+        transition: all 0.3s ease; border: none; box-shadow: 0 4px 15px rgba(23, 162, 184, 0.2);
+    }
+    .btn-primary-action i { margin-right: 10px; font-size: 1.1em; }
+    .btn-primary-action:hover, .btn-primary-action:focus {
+        background-image: linear-gradient(to right, #117a8b 0%, #0c5460 100%);
+        box-shadow: 0 6px 20px rgba(23, 162, 184, 0.3); transform: translateY(-2px); color: white;
+    }
+
+    .search-box { /* Style for the new search box */
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border-radius: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 4px;
+        min-width: 280px; /* Or adjust as needed */
+        flex-grow: 1; /* Allow search to take space */
+        max-width: 400px;
+    }
+    .search-box input[type="text"] {
+        padding: 10px 20px; border: none; border-radius: 20px 0 0 20px;
+        font-size: 1em; flex-grow: 1; outline: none; color: #333;
+    }
+    .search-box input[type="text"]::placeholder { color: #95a5a6; }
+    .search-box button[type="submit"] {
+        background-color: #28a745; color: white; border: none; padding: 10px 20px;
+        border-radius: 0 20px 20px 0; cursor: pointer; font-weight: 500;
+        transition: background-color 0.3s ease; display: inline-flex; align-items: center;
+    }
+    .search-box button[type="submit"] i { margin-right: 8px; }
+    .search-box button[type="submit"]:hover { background-color: #218838; }
+
+
+    .data-table-container { background-color: #ffffff; border-radius: 12px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07); overflow: hidden; }
+    .responsive-table { width: 100%; border-collapse: collapse; }
+    .responsive-table thead th {
+        background-color: #e9edf2; color: #34495e; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.5px; padding: 18px 15px; text-align: center;
+        border-bottom: 2px solid #d1d8e0; white-space: nowrap;
+    }
+    .responsive-table tbody tr { border-bottom: 1px solid #ecf0f1; transition: background-color 0.2s ease-in-out; }
+    .responsive-table tbody tr:last-child { border-bottom: none; }
+    .responsive-table tbody tr:hover { background-color: #f8f9fa; }
+    .responsive-table tbody td { padding: 16px 15px; color: #555; text-align: center; vertical-align: middle; font-size: 0.95em; }
+    .responsive-table tbody td.text-left-align { text-align: left; }
+
+    .notification-file-link { color: #007bff; text-decoration: none; display: inline-flex; align-items: center; font-weight: 500; }
+    .notification-file-link i { margin-right: 8px; color: #17a2b8; }
+    .notification-file-link:hover { color: #0056b3; text-decoration: underline; }
+    .no-file-text { color: #6c757d; font-style: italic; }
+
+    .action-button {
+        text-decoration: none; padding: 8px 15px; border-radius: 20px; margin: 0 5px;
+        font-size: 0.85em; font-weight: 500; transition: all 0.25s ease-in-out;
+        display: inline-flex; align-items: center; border: 1px solid transparent;
+        min-width: 90px; justify-content: center;
+    }
+    .action-button i { margin-right: 7px; font-size: 0.95em; }
+    .action-button.delete { background-color: #dc3545; color: white; border-color: #c82333; }
+    .action-button.delete:hover { background-color: #c82333; transform: scale(1.05); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+
+    .empty-state { text-align: center; padding: 60px 20px; background-color: #fff; }
+    .empty-state i { font-size: 4em; color: #bdc3c7; margin-bottom: 20px; }
+    .empty-state p { font-size: 1.2em; color: #7f8c8d; margin-bottom: 5px; }
+    .empty-state .search-query-display { font-style: italic; color: #95a5a6; }
+
+
+    @media (max-width: 992px) {
+        .actions-toolbar { flex-direction: column-reverse; align-items: stretch; } /* Stack search above button on smaller screens */
+        .search-box { width: 100%; max-width: none; margin-bottom: 15px; }
+        .btn-primary-action { width: 100%; justify-content: center; }
+
+        .responsive-table thead { display: none; }
+        .responsive-table tr { display: block; margin-bottom: 20px; border: 1px solid #dde2e7; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); background-color: #fff; }
+        .responsive-table td { display: block; text-align: right !important; padding-left: 45% !important; position: relative; border-bottom: 1px dashed #ecf0f1; min-height: 40px; display: flex; align-items: center; justify-content: flex-end; }
+        .responsive-table td:last-child { border-bottom: none; }
+        .responsive-table td::before { content: attr(data-label); position: absolute; left: 15px; width: calc(45% - 30px); padding-right: 10px; white-space: nowrap; font-weight: 600; text-align: left; color: #34495e; font-size: 0.9em; top: 50%; transform: translateY(-50%); }
+        .responsive-table td.notification-file-cell { justify-content: flex-start; text-align: left !important; }
+        .responsive-table td.actions-cell { text-align: center !important; padding: 15px !important; justify-content: center;}
+        .responsive-table td.actions-cell::before { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="page-header-actions">
+        <div class="title-info">
+            <h2>Sent Notifications Log</h2>
+            <span class="item-count">
+                {% if all_notifications %}
+                    Displaying {{ all_notifications|length }} Notification{{ all_notifications|length|pluralize }}
+                {% else %}
+                    0 Notifications Sent
+                {% endif %}
+            </span>
+        </div>
+        <div class="actions-toolbar">
+            {# NEW SEARCH FORM #}
+            <form method="get" action="{% url 'admin_view_notification_to_officer' %}" class="search-box">
+                <input type="text" name="search_query" placeholder="Search by name or filename..." value="{{ search_query|default_if_none:'' }}" aria-label="Search Notifications">
+                <button type="submit">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            <a href="{% url 'admin_send_notification_to_officer' %}" class="btn-primary-action">
+                <i class="fas fa-paper-plane"></i> Send New Notification
+            </a>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if all_notifications %}
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Display Name / File</th>
+                        <th>Date Sent</th>
+                        <th>Time Sent</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in all_notifications %}
+                    <tr>
+                        <td data-label="S.No">{{ forloop.counter }}</td>
+                        <td data-label="Notification File" class="notification-file-cell text-left-align">
+                            {% if item.notification and item.notification.url %}
+                                <a href="{{ item.notification.url }}" target="_blank" class="notification-file-link" title="View {{ item.display_name|default:item.notification.name }}">
+                                    <i class="fas fa-file-alt"></i>
+                                    {# Display custom name if available, else original name with cleanup #}
+                                    {{ item.display_name|default:item.notification.name|cut:"Detected_Images_Camera/"|cut:"%Y/%m/%d/"|truncatechars:50 }}
+                                </a>
+                            {% else %}
+                                <span class="no-file-text">
+                                    {{ item.display_name|default:"No file attached"|truncatechars:50 }}
+                                    {% if not item.notification and not item.display_name %} (No file or name) {% endif %}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Date Sent">{{ item.date|date:"d M Y" }}</td>
+                        <td data-label="Time Sent">{{ item.time|time:"H:i:s" }}</td>
+                        <td data-label="Actions" class="actions-cell">
+                            <a href="{% url 'admin_delete_notification_to_officer' item.id %}" class="action-button delete"
+                               onclick="return confirm('Are you sure you want to delete this notification record? This action cannot be undone.');"
+                               aria-label="Delete notification: {{ item.display_name|default:item.notification.name|truncatechars:30 }}">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-envelope-open-text"></i>
+                {% if search_query %}
+                    <p>No Notifications Found</p>
+                    <span class="search-query-display">Your search for "{{ search_query|escape }}" did not match any notifications.</span>
+                {% else %}
+                    <p>No Notifications Sent Yet</p>
+                    <span class="search-query-display">Click "Send New Notification" to get started.</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currentPath = window.location.pathname;
+    const notificationSectionLink = document.querySelector('#sidebar ul li a[href="/admin_view_notification_to_officer/"]'); // Example: Update URL
+
+    if (notificationSectionLink) {
+        const sendNotificationUrlForm = "{% url 'admin_send_notification_to_officer' %}"; // URL for the form page
+        const viewNotificationsUrl = "{% url 'admin_view_notification_to_officer' %}"; // URL for the list page
+
+        // Activate if on list page OR form page that belongs to this section
+        if (currentPath === viewNotificationsUrl || currentPath.startsWith(viewNotificationsUrl) || currentPath === sendNotificationUrlForm) {
+            document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+                li.classList.remove('active-link');
+            });
+            notificationSectionLink.closest('li').classList.add('active-link');
+        }
+    }
+
+    const tableRows = document.querySelectorAll('.responsive-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = 0;
+    });
+});
+
+if (!document.getElementById('fadeInUpKeyframes')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "fadeInUpKeyframes";
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }`;
+    document.head.appendChild(styleSheet);
+}
+</script>
+{% endblock %}

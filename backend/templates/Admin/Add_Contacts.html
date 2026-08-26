@@ -1,0 +1,363 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Add Emergency Contact - WildEye Admin{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Page-specific styles for the contact form */
+    .page-heading-container {
+        /* This is just a conceptual wrapper if needed for more complex headers */
+        /* For now, #top-bar styling from admin_base.html will apply directly */
+    }
+
+    .styled-form-table {
+        width: 100%;
+        max-width: 700px; /* Increased max-width slightly */
+        margin: 25px auto; /* Centered with space from top-bar */
+        border-collapse: collapse;
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden; /* Ensures border-radius clips content */
+    }
+
+    .styled-form-table th,
+    .styled-form-table td {
+        padding: 18px 20px; /* Increased padding */
+        border-bottom: 1px solid #e9ecef; /* Lighter border */
+        text-align: left;
+        vertical-align: top; /* Align content to the top, useful for multi-line textareas */
+    }
+
+    .styled-form-table td:first-child { /* Label column */
+        font-weight: 600;
+        color: #495057;
+        width: 150px; /* Fixed width for labels */
+    }
+
+    .styled-form-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .styled-form-table input[type="text"],
+    .styled-form-table input[type="tel"],
+    .styled-form-table textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-sizing: border-box; /* Essential for width: 100% to work with padding */
+        font-size: 0.95em;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .styled-form-table input[type="text"]:focus,
+    .styled-form-table input[type="tel"]:focus,
+    .styled-form-table textarea:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .styled-form-table textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .styled-form-table .submit-row td {
+        text-align: center;
+        padding-top: 25px; /* More space above submit button */
+        padding-bottom: 25px;
+    }
+
+    .styled-form-table input[type="submit"] {
+        background-color: #007bff; /* Primary blue */
+        color: white;
+        padding: 12px 30px; /* Larger padding */
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.05em;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .styled-form-table input[type="submit"]:hover {
+        background-color: #0056b3; /* Darker blue */
+    }
+
+    .styled-form-table input[type="submit"]:disabled {
+        background-color: #adb5bd; /* Grey for disabled */
+        cursor: not-allowed;
+    }
+
+    .validation-message {
+        font-size: 0.875em; /* Slightly smaller */
+        margin-top: 6px;
+        display: block;
+        min-height: 1.2em; /* Reserve space to prevent layout shifts */
+    }
+    .validation-message.error { color: #dc3545; } /* Bootstrap danger */
+    .validation-message.success { color: #28a745; } /* Bootstrap success */
+    /* .info class for messages is already in admin_base.css */
+
+    /* Input validation styles from admin_base.html will apply for .valid and .invalid classes */
+</style>
+{% endblock %}
+
+{% block content %}
+{# This div uses the #top-bar ID styled in admin_base.html #}
+<div id="top-bar">
+    <h1>Add New Emergency Contact</h1>
+    {# The hamburger button, its functionality is handled by admin_base.html's JS #}
+    <button id="hamburger"><i class="fas fa-bars"></i></button>
+</div>
+
+<form id="addContactForm" name="addContactForm" method="post" action="{% url 'admin_add_contacts_post' %}">
+    {% csrf_token %}
+    <table class="styled-form-table">
+        <tr>
+            <td><label for="name">Name</label></td>
+            <td>
+                <input type="text" name="name" id="name" required />
+                {# Optional: Add a span for name validation messages if needed #}
+            </td>
+        </tr>
+        <tr>
+            <td><label for="details">Details</label></td>
+            <td>
+                <textarea name="details" id="details" rows="4" placeholder="Enter contact details, e.g., department, specific role..."></textarea>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="phone">Phone Number</label></td>
+            <td>
+                <input type="tel" name="phone" id="phone" required placeholder="e.g., 100, 9876543210, 18001234567" />
+                <span id="phoneValidationMessage" class="validation-message"></span>
+            </td>
+        </tr>
+        <tr class="submit-row">
+            <td colspan="2">
+                <input type="submit" name="Submit" value="Add Contact" id="submitButton" />
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneInput = document.getElementById('phone');
+    const phoneValidationMessage = document.getElementById('phoneValidationMessage');
+    const submitButton = document.getElementById('submitButton');
+    const addContactForm = document.getElementById('addContactForm');
+    const nameInput = document.getElementById('name'); // For basic required check
+
+    let isPhoneValid = false;
+    let isNameValid = false; // Basic check for name
+    let phoneValidationTimeout = null;
+    let xhrPhoneCheck = null; // To store the XMLHttpRequest object
+
+    const MIN_PHONE_LENGTH = 3; // Minimum allowed digits for a phone number
+    const MAX_PHONE_LENGTH = 15; // Maximum allowed digits (e.g. for long toll-free or international)
+
+    function updateNameValidity() {
+        isNameValid = nameInput.value.trim() !== "";
+        if (isNameValid) {
+            nameInput.classList.remove('invalid');
+            nameInput.classList.add('valid'); // Optional: visual feedback for name
+        } else {
+            nameInput.classList.remove('valid');
+            // nameInput.classList.add('invalid'); // Can add this if you want immediate invalid state for name
+        }
+    }
+
+    function validatePhoneRealTime() {
+        const phone = phoneInput.value.trim();
+
+        clearTimeout(phoneValidationTimeout);
+        if (xhrPhoneCheck) {
+            xhrPhoneCheck.abort();
+            xhrPhoneCheck = null;
+        }
+
+        phoneInput.classList.remove('valid', 'invalid', 'info-input');
+        phoneValidationMessage.textContent = '';
+        phoneValidationMessage.className = 'validation-message';
+
+        if (phone === "") {
+            phoneInput.classList.add('invalid');
+            phoneValidationMessage.textContent = 'Phone number is required.';
+            phoneValidationMessage.classList.add('error');
+            isPhoneValid = false;
+            updateSubmitButtonState();
+            return;
+        }
+
+        // 1. Must be all digits.
+        if (!/^\d+$/.test(phone)) {
+            phoneInput.classList.add('invalid');
+            phoneValidationMessage.textContent = 'Phone number must contain only digits.';
+            phoneValidationMessage.classList.add('error');
+            isPhoneValid = false;
+            updateSubmitButtonState();
+            return;
+        }
+
+        // 2. Must be within the defined length range.
+        if (phone.length < MIN_PHONE_LENGTH || phone.length > MAX_PHONE_LENGTH) {
+            phoneInput.classList.add('invalid');
+            phoneValidationMessage.textContent = `Phone number must be between ${MIN_PHONE_LENGTH} and ${MAX_PHONE_LENGTH} digits long.`;
+            phoneValidationMessage.classList.add('error');
+            isPhoneValid = false;
+            updateSubmitButtonState();
+            return;
+        }
+
+        // If all client-side checks pass, proceed to server-side availability check
+        phoneInput.classList.add('info-input');
+        phoneValidationMessage.textContent = 'Checking availability...';
+        phoneValidationMessage.classList.add('info');
+        isPhoneValid = false; // Tentatively invalid until server confirms
+        updateSubmitButtonState();
+
+        phoneValidationTimeout = setTimeout(() => {
+            const checkUrl = `{% url 'check_phone_exists_contact' %}?phone=${encodeURIComponent(phone)}`;
+            
+            xhrPhoneCheck = new XMLHttpRequest();
+            xhrPhoneCheck.open('GET', checkUrl, true);
+            xhrPhoneCheck.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhrPhoneCheck.onload = function() {
+                if (xhrPhoneCheck.status >= 200 && xhrPhoneCheck.status < 300) {
+                    try {
+                        const data = JSON.parse(xhrPhoneCheck.responseText);
+                        phoneInput.classList.remove('info-input');
+                        if (data.is_taken) {
+                            phoneInput.classList.add('invalid');
+                            phoneValidationMessage.textContent = 'This phone number is already registered.';
+                            phoneValidationMessage.classList.add('error');
+                            isPhoneValid = false;
+                        } else {
+                            phoneInput.classList.add('valid');
+                            phoneValidationMessage.textContent = 'Phone number is available.';
+                            phoneValidationMessage.classList.add('success');
+                            isPhoneValid = true;
+                        }
+                    } catch (e) {
+                        console.error("Error parsing JSON response: ", e, xhrPhoneCheck.responseText);
+                        phoneInput.classList.remove('info-input');
+                        phoneInput.classList.add('invalid');
+                        phoneValidationMessage.textContent = 'Error validating phone. Please try again.';
+                        phoneValidationMessage.classList.add('error');
+                        isPhoneValid = false;
+                    }
+                } else {
+                    console.error("AJAX request failed: ", xhrPhoneCheck.status, xhrPhoneCheck.statusText);
+                    phoneInput.classList.remove('info-input');
+                    phoneInput.classList.add('invalid');
+                    phoneValidationMessage.textContent = 'Could not validate phone (Server error).';
+                    phoneValidationMessage.classList.add('error');
+                    isPhoneValid = false;
+                }
+                updateSubmitButtonState();
+                xhrPhoneCheck = null;
+            };
+
+            xhrPhoneCheck.onerror = function() {
+                console.error("AJAX request error (Network).");
+                phoneInput.classList.remove('info-input');
+                phoneInput.classList.add('invalid');
+                phoneValidationMessage.textContent = 'Network error. Could not validate phone.';
+                phoneValidationMessage.classList.add('error');
+                isPhoneValid = false;
+                updateSubmitButtonState();
+                xhrPhoneCheck = null;
+            };
+            
+            xhrPhoneCheck.send();
+        }, 500); // Debounce time: 500ms
+    }
+
+    function updateSubmitButtonState() {
+        if (isPhoneValid && isNameValid) {
+            submitButton.disabled = false;
+        } else {
+            submitButton.disabled = true;
+        }
+    }
+
+    if (phoneInput) {
+        phoneInput.addEventListener('input', validatePhoneRealTime);
+    }
+
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            updateNameValidity();
+            updateSubmitButtonState();
+        });
+        nameInput.addEventListener('blur', function() { // Add blur event for name validation too
+            updateNameValidity();
+            if (!isNameValid) {
+                nameInput.classList.add('invalid'); // Show invalid state on blur if empty
+            }
+            updateSubmitButtonState();
+        });
+    }
+
+    // Initial state checks
+    if (nameInput) updateNameValidity();
+    updateSubmitButtonState();
+
+    if (addContactForm) {
+        addContactForm.addEventListener('submit', function(event) {
+            // Perform final checks for all fields
+            updateNameValidity(); // Ensure name validity is current
+            
+            // Manually trigger phone validation logic if not already valid or if input changed without focusout
+            // This is a bit aggressive but ensures the latest state is checked.
+            // However, isPhoneValid should be the main flag from the async check.
+            // Let's rely on the current isPhoneValid state, and the individual field required checks.
+
+            let currentPhoneValue = phoneInput.value.trim();
+            let isCurrentPhoneFormatValid = /^\d+$/.test(currentPhoneValue) && 
+                                            currentPhoneValue.length >= MIN_PHONE_LENGTH && 
+                                            currentPhoneValue.length <= MAX_PHONE_LENGTH;
+
+            if (!isPhoneValid || !isNameValid || !isCurrentPhoneFormatValid) {
+                event.preventDefault(); 
+
+                let alertMessage = "Please correct the errors before submitting:\n";
+                if (!isNameValid) {
+                    alertMessage += "- Name is required.\n";
+                    if(nameInput) nameInput.classList.add('invalid');
+                }
+                
+                // Phone specific messages for submit validation
+                if (currentPhoneValue === "") {
+                    alertMessage += "- Phone number is required.\n";
+                    if(phoneInput) phoneInput.classList.add('invalid');
+                } else if (!/^\d+$/.test(currentPhoneValue)) {
+                    alertMessage += "- Phone number must contain only digits.\n";
+                    if(phoneInput) phoneInput.classList.add('invalid');
+                } else if (currentPhoneValue.length < MIN_PHONE_LENGTH || currentPhoneValue.length > MAX_PHONE_LENGTH) {
+                    alertMessage += `- Phone number must be between ${MIN_PHONE_LENGTH} and ${MAX_PHONE_LENGTH} digits long.\n`;
+                    if(phoneInput) phoneInput.classList.add('invalid');
+                } else if (!isPhoneValid) { // Format is OK, but server check failed or pending
+                     alertMessage += "- Phone number is invalid or already taken (check message below field).\n";
+                     if(phoneInput) phoneInput.classList.add('invalid'); // Keep invalid class if server said so
+                }
+                
+                alert(alertMessage.trim());
+
+                if(!isNameValid && nameInput) nameInput.focus();
+                else if((!isPhoneValid || !isCurrentPhoneFormatValid) && phoneInput) phoneInput.focus();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

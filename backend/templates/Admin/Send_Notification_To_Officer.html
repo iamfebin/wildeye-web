@@ -1,0 +1,207 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Send Notification to Officers{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* ... (keep your existing styles for this page) ... */
+    #page-content-wrapper {
+        padding: 25px 30px;
+        background-color: #f4f7f6; /* Light background for content area */
+    }
+
+    #top-bar h1 { /* Style for the main title from base template */
+        font-size: 2em;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .form-container-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+        padding: 30px 40px; /* More padding for a form */
+        max-width: 700px; /* Max width for the form container */
+        margin: 20px auto; /* Center the form card and add some top margin */
+    }
+
+    .form-header {
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    .form-header h2 {
+        font-size: 1.8em;
+        font-weight: 600;
+        color: #34495e;
+        margin-bottom: 8px;
+    }
+    .form-header p {
+        font-size: 1em;
+        color: #7f8c8d;
+    }
+
+    .form-group {
+        margin-bottom: 25px; /* Space between form fields */
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        font-size: 0.95em;
+    }
+
+    .form-control, .form-control-readonly {
+        width: 100%;
+        padding: 12px 18px;
+        font-size: 1em;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        box-sizing: border-box; /* Important for width 100% */
+    }
+    .form-control:focus {
+        border-color: #007bff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    /* Special styling for file input */
+    input[type="file"].form-control {
+        padding: 10px; /* Adjust padding for file input */
+        line-height: 1.5; /* Better vertical alignment */
+    }
+    input[type="file"].form-control::file-selector-button {
+        margin-right: 15px;
+        padding: 10px 15px;
+        border: none;
+        background-color: #6c757d; /* Bootstrap secondary color */
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    input[type="file"].form-control::file-selector-button:hover {
+        background-color: #5a6268;
+    }
+
+
+    .form-control-readonly {
+        background-color: #e9ecef; /* Light grey for readonly fields */
+        color: #495057;
+        cursor: default; /* Indicate not editable */
+    }
+
+    .form-actions {
+        margin-top: 30px;
+        text-align: center; /* Center the submit button */
+    }
+
+    .btn-submit-form { /* Similar to btn-primary-action but specific for form submission */
+        background-image: linear-gradient(to right, #28a745 0%, #218838 100%); /* Green gradient */
+        color: white;
+        padding: 12px 35px; /* Generous padding */
+        text-decoration: none;
+        border-radius: 25px; /* Pill shape */
+        font-weight: 600;
+        font-size: 1.1em;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2); /* Green shadow */
+        cursor: pointer;
+    }
+    .btn-submit-form i {
+        margin-right: 10px;
+        font-size: 1.1em;
+    }
+    .btn-submit-form:hover, .btn-submit-form:focus {
+        background-image: linear-gradient(to right, #218838 0%, #1e7e34 100%);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        transform: translateY(-2px);
+        color: white;
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="form-container-card">
+        <div class="form-header">
+            <h2><i class="fas fa-paper-plane" style="margin-right: 10px; color: #17a2b8;"></i>Send Notification to Officers</h2>
+            <p>Upload a file to notify all registered forest officers.</p>
+        </div>
+
+        {# Django Messages are usually better handled in the base template to appear on all pages #}
+        {# But if you want them specific to this form's result, keep here or move to base #}
+
+        <form method="post" action="{% url 'admin_send_notification_to_officer_post' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_notification_file">Notification File <span style="color:red;">*</span></label>
+                <input type="file" name="notification_file" id="id_notification_file" class="form-control" required>
+                <small class="form-text text-muted" style="display:block; margin-top: 5px;">Select the document or image file for the notification.</small>
+            </div>
+
+            <div class="form-group"> {# NEW FIELD FOR CUSTOM NAME #}
+                <label for="id_custom_file_name">Custom File Name (Optional)</label>
+                <input type="text" name="custom_file_name" id="id_custom_file_name" class="form-control" maxlength="250" placeholder="e.g., 'Urgent Meeting Agenda - June'">
+                <small class="form-text text-muted" style="display:block; margin-top: 5px;">Provide a descriptive name for this notification. If left blank, the original filename will be used for reference.</small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_notification_date">Current Date (Auto-set on send)</label>
+                <input type="text" name="notification_date_display" id="id_notification_date_display" class="form-control-readonly" value="{{ current_date }}" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="id_notification_time">Current Time (Auto-set on send)</label>
+                <input type="text" name="notification_time_display" id="id_notification_time_display" class="form-control-readonly" value="{{ current_time }}" readonly>
+            </div>
+
+
+            <div class="form-actions">
+                <button type="submit" class="btn-submit-form">
+                    <i class="fas fa-share-square"></i> Send Notification
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler
+    const currentPath = window.location.pathname;
+    // **UPDATE THIS**: Ensure this selector targets the correct primary link in your sidebar
+    // that leads to either sending or viewing notifications.
+    const notificationSectionLink = document.querySelector('#sidebar ul li a[href="/admin_view_notification_to_officer/"]'); // Or whatever the main link is
+
+    if (notificationSectionLink) {
+        const sendNotificationUrl = "{% url 'admin_send_notification_to_officer_post' %}"; // Get URL from Django
+        const viewNotificationsUrl = "{% url 'admin_view_notification_to_officer' %}"; // Get URL for view page
+
+        if (currentPath === sendNotificationUrl || currentPath === viewNotificationsUrl || currentPath.startsWith(viewNotificationsUrl)) {
+            document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+                li.classList.remove('active-link');
+            });
+            notificationSectionLink.closest('li').classList.add('active-link');
+        }
+    }
+});
+</script>
+{% endblock %}

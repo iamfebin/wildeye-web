@@ -1,0 +1,95 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Confirm Delete Curfew - WildEye Officer{% endblock title %}
+
+{% block page_title %}Confirm Curfew Deletion{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    /* Custom styles for this confirmation page - similar to other delete confirmations */
+    .confirmation-card-curfew {
+        border-radius: 0.75rem;
+    }
+
+    .curfew-summary-display { /* Slightly different name to avoid collision if other summaries exist */
+        background-color: #fff3cd; /* Bootstrap warning light background */
+        border: 1px solid #ffe69c;  /* Bootstrap warning light border */
+        border-left: 5px solid #ffc107; /* Bootstrap warning color for left border */
+        border-radius: 0.375rem;
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: left; /* Ensure content within this block is left-aligned */
+    }
+    .curfew-summary-display p {
+        margin-bottom: 0.5rem;
+        font-size: 0.95em;
+    }
+    .curfew-summary-display p:last-child {
+        margin-bottom: 0;
+    }
+    .curfew-summary-display strong {
+        color: #664d03; /* Darker text for warning context */
+    }
+    .curfew-summary-display .curfew-name-emphasis {
+        font-weight: 600;
+        color: #523e02;
+    }
+
+    .confirmation-actions {
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-7 col-md-9">
+
+            <div class="card shadow-sm confirmation-card-curfew">
+                <div class="card-header bg-danger text-white py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-exclamation-octagon-fill me-2" style="font-size: 1.2em;"></i>
+                        Confirm Curfew Deletion
+                    </h5>
+                </div>
+                <div class="card-body p-4 text-center">
+                    <p class="lead mb-3">
+                        Are you sure you want to permanently delete the following curfew?
+                    </p>
+
+                    <div class="curfew-summary-display">
+                        <p class="mb-2"><strong>Curfew Name:</strong> <span class="curfew-name-emphasis">"{{ curfew.curfew_name }}"</span></p>
+                        <p><strong>Start Date:</strong> {{ curfew.start_date|date:"F d, Y" }} at {{ curfew.start_time|time:"h:i A" }}</p>
+                        <p><strong>End Date:</strong> {{ curfew.end_date|date:"F d, Y" }} at {{ curfew.end_time|time:"h:i A" }}</p>
+                        <p><strong>Affected Area:</strong> {{ curfew.affected_area|truncatewords:15 }}</p>
+                    </div>
+
+                    <p class="text-danger fw-bold mt-3"><i class="bi bi-cone-striped"></i> This action cannot be undone.</p>
+
+                    <form method="post" class="mt-2">
+                        {% csrf_token %}
+                        <div class="confirmation-actions">
+                            <a href="{% url 'forest_officer_view_curfew' %}" class="btn btn-outline-secondary rounded-pill shadow-sm px-4 py-2">
+                                <i class="bi bi-x-circle-fill me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger rounded-pill shadow-sm px-4 py-2">
+                                <i class="bi bi-trash3-fill me-2"></i>Yes, Delete Curfew
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,0 +1,217 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - {% if animal.is_core_animal %}View{% else %}Edit{% endif %} Animal Details{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    #page-content-wrapper { padding: 25px 30px; background-color: #f4f7f6; }
+    #top-bar h1 { font-size: 2em; font-weight: 700; color: #2c3e50; }
+
+    .form-container-card { background-color: #ffffff; padding: 30px 35px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07); max-width: 800px; margin: 20px auto; }
+    .form-container-card .page-subtitle { font-size: 1.8em; font-weight: 600; color: #34495e; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0; text-align: center; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; font-size: 1em; }
+    .form-control { width: 100%; padding: 12px 15px; font-size: 1em; line-height: 1.5; color: #495057; background-color: #fff; background-clip: padding-box; border: 1px solid #ced4da; border-radius: 8px; transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out; box-sizing: border-box; }
+    .form-control:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25); }
+    .form-control[readonly] { background-color: #e9ecef; opacity: 1; cursor: not-allowed; }
+    textarea.form-control { min-height: 120px; resize: vertical; }
+    .form-control-file { display: block; width: 100%; padding: .375rem .75rem; font-size: 1rem; font-weight: 400; line-height: 1.5; color: #495057; background-color: #fff; background-clip: padding-box; border: 1px solid #ced4da; border-radius: .25rem; transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out; }
+    .form-control-file:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 .2rem rgba(0,123,255,.25); }
+
+
+    .current-image-preview { margin-bottom: 15px; }
+    .current-image-preview img { max-width: 200px; max-height: 200px; border-radius: 8px; border: 1px solid #ddd; display: block; margin-bottom: 5px; }
+    .current-image-preview .no-image-text { color: #6c757d; font-style: italic; }
+
+    .form-actions { margin-top: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+    .btn-submit-form { background-image: linear-gradient(to right, #28a745 0%, #218838 100%); color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-flex; align-items: center; transition: all 0.3s ease; border: none; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2); font-size: 1.05em; }
+    .btn-submit-form:hover, .btn-submit-form:focus { background-image: linear-gradient(to right, #218838 0%, #1e7e34 100%); box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3); transform: translateY(-2px); color: white; }
+    .link-back { color: #007bff; text-decoration: none; font-weight: 500; padding: 10px 15px; border-radius: 20px; transition: background-color 0.2s ease, color 0.2s ease; }
+    .link-back:hover { background-color: #e9ecef; color: #0056b3; }
+    .link-back i { margin-right: 6px; }
+
+    .readonly-info {
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+        color: #495057;
+    }
+    .readonly-info i {
+        margin-right: 8px;
+        color: #17a2b8; /* Info color */
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="form-container-card">
+        <h2 class="page-subtitle">{% if animal.is_core_animal %}View{% else %}Edit{% endif %} Animal: {{ animal.name }}</h2>
+
+        {% if animal.is_core_animal %}
+        <div class="readonly-info">
+            <i class="fas fa-info-circle"></i> This is a core animal. Its name cannot be changed. Other details can be updated.
+        </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="animal_name">Name:</label>
+                <input type="text" id="animal_name" name="textfield3" class="form-control"
+                       value="{{ animal.name }}"
+                       {% if animal.is_core_animal %}readonly{% endif %}
+                       required pattern="^[a-zA-Z0-9\s\(\)-_]+$" title="Please enter only letters, numbers, spaces, and basic punctuation like (), -, _ .">
+            </div>
+
+            <div class="form-group">
+                <label for="details">Details:</label>
+                <textarea id="details" name="textfield" class="form-control" rows="5" required>{{ animal.details }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="imageFile">Image:</label>
+                <div class="current-image-preview">
+                    {% if animal.image and animal.image.url %}
+                        <img src="{{ animal.image.url }}" alt="Current image of {{ animal.name }}">
+                        Current Image: {{ animal.image.name|cut:"animal_images/" }}
+                    {% else %}
+                        <span class="no-image-text">No image currently uploaded.</span>
+                    {% endif %}
+                </div>
+                <input type="file" id="imageFile" name="file" class="form-control-file">
+                <small class="form-text text-muted">Upload a new image to replace the current one (optional).</small>
+            </div>
+
+            <div class="form-group">
+                <label for="type">Type:</label>
+                <select id="type" name="select" class="form-control" required>
+                    <option value="" disabled {% if not animal.type %}selected{% endif %}>-- Select Type --</option>
+                    <option value="Extinct (EX)" {% if animal.type == 'Extinct (EX)' %}selected{% endif %}>Extinct (EX)</option>
+                    <option value="Extinct in the Wild (EW)" {% if animal.type == 'Extinct in the Wild (EW)' %}selected{% endif %}>Extinct in the Wild (EW)</option>
+                    <option value="Critically Endangered (CR)" {% if animal.type == 'Critically Endangered (CR)' %}selected{% endif %}>Critically Endangered (CR)</option>
+                    <option value="Endangered (EN)" {% if animal.type == 'Endangered (EN)' %}selected{% endif %}>Endangered (EN)</option>
+                    <option value="Vulnerable (VU)" {% if animal.type == 'Vulnerable (VU)' %}selected{% endif %}>Vulnerable (VU)</option>
+                    <option value="Near Threatened (NT)" {% if animal.type == 'Near Threatened (NT)' %}selected{% endif %}>Near Threatened (NT)</option>
+                    <option value="Least Concern (LC)" {% if animal.type == 'Least Concern (LC)' %}selected{% endif %}>Least Concern (LC)</option>
+                    {# Your existing types from the old form #}
+                    <option value="Data Deficient (DD)" {% if animal.type == 'Data Deficient (DD)' %}selected{% endif %}>Data Deficient (DD)</option>
+                    <option value="Not Evaluated (NE)" {% if animal.type == 'Not Evaluated (NE)' %}selected{% endif %}>Not Evaluated (NE)</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                 <a href="{% url 'admin_view_animal' %}" class="link-back">
+                    <i class="fas fa-arrow-left"></i> Back to Animal List
+                </a>
+                <button type="submit" class="btn-submit-form">
+                    <i class="fas fa-save" style="margin-right: 8px;"></i> Update Animal
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler
+    const currentPath = window.location.pathname;
+    const animalBaseLink = document.querySelector('#sidebar ul li a[href="{% url 'admin_view_animal' %}"]');
+
+    if (animalBaseLink && (currentPath.includes('/admin_edit_animal/') || currentPath === '{% url "admin_view_animal" %}' || currentPath === '{% url "admin_add_animal" %}')) {
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        animalBaseLink.closest('li').classList.add('active-link');
+    }
+});
+</script>
+{% endblock %}
+
+
+
+
+
+<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Edit Animal</title> {# Changed Title #}
+</head>
+
+<body>
+<h1>Edit Animal</h1> {# Added Heading #}
+
+{# Form action submits to the same URL with the animal ID #}
+<form action="" method="post" enctype="multipart/form-data" name="form1" id="form1">
+  {% csrf_token %}
+  <table width="400" border="1"> {# Adjusted width for image display #}
+    <tr>
+      <td width="100">Name </td> {# Added width for consistency #}
+      <td><label>
+        {# Pre-fill the name field #}
+        <input type="text" name="textfield3" value="{{ animal.name }}" required pattern="^[a-zA-Z\s]+$" title="Please enter only letters and spaces."/>
+      </label></td>
+    </tr>
+    <tr>
+      <td>Details</td>
+      <td><label>
+        {# Pre-fill the details field #}
+        <input type="text" name="textfield" value="{{ animal.details }}" required/>
+      </label></td>
+    </tr>
+    <tr>
+      <td>Image</td>
+      <td>
+          {# Display current image if it exists #}
+          {% if animal.image %}
+              <img src="{{ animal.image.url }}" alt="{{ animal.name }} image" style="max-width: 150px; height: auto; margin-bottom: 10px;"/><br/>
+              Current Image
+          {% else %}
+              No image currently uploaded.
+          {% endif %}
+          <br/>
+          <label>
+            {# File input - will not be pre-filled for security #}
+            {# User chooses a new file to replace the old one #}
+            Replace Image: <input type="file" name="file" id="imageFile" /> {# Removed 'required' as user might not change the image #}
+          </label>
+      </td>
+    </tr>
+    <tr>
+      <td>Type</td>
+      <td><label>
+      <select name="select" id="select" required>
+        <option value="" disabled {% if not animal.type %}selected{% endif %}>select</option> {# Mark 'select' disabled and selected if no type is set #}
+        {# Set the 'selected' attribute based on the animal's current type #}
+        <option value="Preserved" {% if animal.type == 'Preserved' %}selected{% endif %}>Preserved</option>
+        <option value="Not Preserved" {% if animal.type == 'Not Preserved' %}selected{% endif %}>Not Preserved</option>
+      </select>
+      </label></td>
+    </tr>
+    <tr>
+      <td colspan="2"><label>
+        <div align="center">
+          <input type="submit" name="Submit" value="Update" /> {# Changed button text #}
+        </div>
+      </label></td>
+    </tr>
+  </table>
+</form>
+</body>
+</html> -->

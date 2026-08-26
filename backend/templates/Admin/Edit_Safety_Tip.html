@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Safety Tip - WildEye Admin</title>
+    <style>
+        /* Basic CSS for a clean look - integrate with your existing admin CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        textarea,
+        select,
+        input[type="file"] {
+            width: calc(100% - 22px); /* Adjust for padding and border */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .radio-group label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .radio-group input[type="radio"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        .file-upload-section {
+            border: 1px dashed #ccc;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .current-file-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .current-file-info img {
+            max-width: 100px;
+            height: auto;
+            display: block;
+            margin-top: 5px;
+            border-radius: 4px;
+        }
+        .image-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .image-input-group input[type="file"] {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .image-input-group input[type="text"] {
+            width: 150px; /* Smaller width for caption */
+            flex-shrink: 0; /* Prevent shrinking when file input is wide */
+        }
+        .image-input-group button {
+            background-color: #dc3545; /* Red for remove */
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: 10px; /* Space between input and button */
+        }
+        .add-image-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        button[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Edit Safety Tip: {{ tip.title }}</h2>
+        <form action="{% url 'admin_edit_safety_tip' tip.id %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div>
+                <label for="title">Tip Title:</label>
+                <input type="text" id="title" name="title" value="{{ tip.title }}" required>
+            </div>
+            <div>
+                <label for="description">Description (Optional):</label>
+                <textarea id="description" name="description">{{ tip.description }}</textarea>
+            </div>
+            <div>
+                <label for="category">Category (Optional, e.g., 'Animal Encounters', 'Survival'):</label>
+                <input type="text" id="category" name="category" value="{{ tip.category }}">
+            </div>
+            <div>
+                <label for="thumbnail">Current Thumbnail:</label>
+                {% if tip.thumbnail %}
+                    <div class="current-file-info">
+                        <img src="{{ tip.thumbnail.url }}" alt="Current Thumbnail">
+                        <p>{{ tip.thumbnail.name|cut:"thumbnails/" }}</p>
+                    </div>
+                {% else %}
+                    <p class="current-file-info">No thumbnail uploaded.</p>
+                {% endif %}
+                <label for="new_thumbnail">Upload New Thumbnail (optional):</label>
+                <input type="file" id="new_thumbnail" name="thumbnail" accept="image/*">
+            </div>
+
+            <div>
+                <label>Content Type:</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="content_type" value="image_gallery" id="radio_image_gallery" {% if tip.content_type == 'image_gallery' %}checked{% endif %}> Image Gallery
+                    </label>
+                    <label>
+                        <input type="radio" name="content_type" value="pdf_document" id="radio_pdf_document" {% if tip.content_type == 'pdf_document' %}checked{% endif %}> PDF Document
+                    </label>
+                </div>
+            </div>
+
+            <div id="image_gallery_section" class="file-upload-section">
+                <label>Current Images (for Image Gallery):</label>
+                {% if current_images %}
+                    <div id="existing_image_inputs_container">
+                        {% for img in current_images %}
+                            <div class="image-input-group" data-image-id="{{ img.id }}">
+                                <img src="{{ img.image.url }}" alt="Image {{ forloop.counter }}" width="80" height="80" style="object-fit: cover; margin-right: 10px; border-radius: 4px;">
+                                <input type="hidden" name="existing_image_ids" value="{{ img.id }}">
+                                <input type="file" name="replace_image_file_{{ img.id }}" accept="image/*" style="flex-grow: 1; margin-right: 10px;">
+                                <input type="text" name="existing_image_captions_{{ img.id }}" value="{{ img.caption }}" placeholder="Caption (Optional)" style="width: 150px;">
+                                <button type="button" onclick="removeImageInput(this)">Remove</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <p style="font-size: 0.9em; color: #888; margin-top: 10px;">
+                        To replace an image, choose a new file next to it. To remove an image, click 'Remove'.
+                    </p>
+                {% else %}
+                    <p class="current-file-info">No images currently in gallery.</p>
+                {% endif %}
+                
+                <label>Add New Images:</label>
+                <div id="image_inputs_container">
+                    <div class="image-input-group">
+                        <input type="file" name="new_image_files" accept="image/*">
+                        <input type="text" name="new_image_captions" placeholder="Caption (Optional)">
+                        <button type="button" onclick="this.parentNode.remove()">Remove</button>
+                    </div>
+                </div>
+                <button type="button" class="add-image-btn" onclick="addNewImageInput()">Add Another Image</button>
+            </div>
+
+            <div id="pdf_document_section" class="file-upload-section" style="display: none;">
+                <label for="pdf_file">Current PDF File:</label>
+                {% if tip.pdf_file %}
+                    <div class="current-file-info">
+                        <p><a href="{{ tip.pdf_file.url }}" target="_blank">{{ tip.pdf_file.name|cut:"pdfs/" }}</a></p>
+                    </div>
+                {% else %}
+                    <p class="current-file-info">No PDF file uploaded.</p>
+                {% endif %}
+                <label for="new_pdf_file">Upload New PDF File (replaces existing):</label>
+                <input type="file" id="new_pdf_file" name="pdf_file" accept="application/pdf">
+            </div>
+
+            <button type="submit">Update Safety Tip</button>
+        </form>
+        <a href="{% url 'admin_view_safety_tips' %}" class="back-link">Back to View Safety Tips</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const radioImageGallery = document.getElementById('radio_image_gallery');
+            const radioPdfDocument = document.getElementById('radio_pdf_document');
+            const imageGallerySection = document.getElementById('image_gallery_section');
+            const pdfDocumentSection = document.getElementById('pdf_document_section');
+
+            function toggleContentTypeSections() {
+                if (radioImageGallery.checked) {
+                    imageGallerySection.style.display = 'block';
+                    pdfDocumentSection.style.display = 'none';
+                } else {
+                    imageGallerySection.style.display = 'none';
+                    pdfDocumentSection.style.display = 'block';
+                }
+            }
+
+            radioImageGallery.addEventListener('change', toggleContentTypeSections);
+            radioPdfDocument.addEventListener('change', toggleContentTypeSections);
+
+            // Initial call to set correct visibility based on current tip content type
+            toggleContentTypeSections();
+        });
+
+        function addNewImageInput() {
+            const container = document.getElementById('image_inputs_container');
+            const newDiv = document.createElement('div');
+            newDiv.className = 'image-input-group';
+            newDiv.innerHTML = `
+                <input type="file" name="new_image_files" accept="image/*" required>
+                <input type="text" name="new_image_captions" placeholder="Caption (Optional)">
+                <button type="button" onclick="this.parentNode.remove()">Remove</button>
+            `;
+            container.appendChild(newDiv);
+        }
+
+        function removeImageInput(buttonElement) {
+            const imageGroup = buttonElement.parentNode;
+            const imageId = imageGroup.dataset.imageId; // Get the image ID
+            if (imageId) {
+                // Create a hidden input to mark this image for deletion on the server
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'images_to_delete'; // This name will be collected by getlist
+                hiddenInput.value = imageId;
+                // Append it to the form, not just the imageGroup, so it's guaranteed to be sent
+                document.querySelector('form').appendChild(hiddenInput); 
+            }
+            imageGroup.remove(); // Remove the div from the DOM
+        }
+    </script>
+</body>
+</html>

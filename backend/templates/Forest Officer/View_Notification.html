@@ -1,0 +1,149 @@
+{% extends 'Forest Officer/officer_base.html' %}
+{% load static %}
+
+{% block title %}View Admin Notifications | WildEye Officer{% endblock title %}
+
+{% block page_title %}Notifications from Admin{% endblock page_title %}
+
+{% block extra_head %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <style>
+        .dataTables_wrapper .dataTables_paginate .page-item.active .page-link {
+            background-color: #0a58ca;
+            border-color: #0a58ca;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+{% endblock extra_head %}
+
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h5 class="card-title mb-4">Received Notifications</h5>
+        
+        <div class="table-responsive">
+            <table id="notificationsTable" class="table table-bordered table-striped table-hover align-middle" style="width:100%">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="text-center" style="width: 5%;">#</th>
+                        <th scope="col">Notification</th>
+                        <th scope="col" class="text-center" style="width: 15%;">Time</th>
+                        <th scope="col" class="text-center" style="width: 15%;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in all_notifications %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>
+                            {% if notification.notification and notification.notification.url %}
+                                <a href="{{ notification.notification.url }}" target="_blank" class="text-decoration-none">
+                                    <i class="bi bi-file-earmark-text me-2"></i>
+                                    {# KEY CHANGE: Use display_name if available, otherwise fall back to the filename. #}
+                                    {{ notification.display_name|default:notification.notification.name|cut:"Detected_Images_Camera/"|cut:"%Y/%m/%d/" }}
+                                </a>
+                            {% else %}
+                                {# If no file, still show the display_name if it exists (for text-only notifications) #}
+                                <span class="text-muted">{{ notification.display_name|default:"(No file attached)" }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">{{ notification.time }}</td>
+                        <td class="text-center">{{ notification.date }}</td>
+                    </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">You have no notifications from the admin.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+
+{% block extra_scripts %}
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <!-- DataTables Core JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <!-- DataTables Bootstrap 5 Integration JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Initialize DataTables -->
+    <script>
+        $(document).ready(function() {
+            $('#notificationsTable').DataTable({
+                "order": [[ 3, "desc" ]], // Sort by Date column (index 3) descending
+                "language": {
+                    "search": "Search:",
+                    "emptyTable": "You have no notifications from the admin."
+                }
+            });
+        });
+    </script>
+{% endblock extra_scripts %}
+
+
+
+
+<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>View Notifications from Admin</title>
+</head>
+
+<body>
+<form id="form1" name="form1" method="post" action="">
+  <table width="174" border="1">
+
+    <tr>
+      <td width="24"><div align="center">Sno</div></td>
+      <td width="37">Notification</td>
+      <td width="37">Time</td>
+      <td width="48">Date</td>
+    </tr>
+
+    {% if all_notifications %}
+        {% for notification in all_notifications %}
+        <tr>
+          <td><div align="center">{{ forloop.counter }}</div></td> {# Sno (1-based counter) #}
+          <td><div align="center">                  
+                  {# Check if the notification field has a file associated and is not empty #}
+                  {% if notification.notification %}
+                      {# Use the .url attribute to create a clickable link #}
+                      <a href="{{ notification.notification.url }}" target="_blank">
+                          {# Display the filename as the link text #}
+                          {{ notification.notification.name|cut:"Detected_Images_Camera/"|cut:"%Y/%m/%d/" }} {# Optional: Clean up path display if needed #}
+                          {# A simpler display might just be: {{ notification.notification.name }} #}
+                      </a>
+                  {% else %}
+                      {# Display something if no file is attached #}
+                      No file attached
+                  {% endif %}
+                </div>
+            </td>
+
+
+
+          <td><div align="center">{{ notification.date }}</div></td>
+          <td><div align="center">{{ notification.time }}</div></td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr>
+            <td colspan="4"><div align="center">No notifications</div></td>
+        </tr>
+    {% endif %}
+
+  </table>
+</form>
+</body>
+</html> -->

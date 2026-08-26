@@ -1,0 +1,481 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WildEye Admin{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif; /* Use Poppins */
+            background-color: #f8f9fa; /* Light grey background */
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            margin: 0; /* Ensure no default body margin */
+            display: flex; /* Use flexbox for main layout */
+            min-height: 100vh; /* Ensure body takes at least full viewport height */
+        }
+
+        /* General Transitions */
+        a, .btn {
+            transition: all 0.3s ease;
+        }
+
+        /* Wrapper for Sidebar Layout */
+        .wrapper {
+            width: 100%;
+            display: flex; /* Use flexbox inside wrapper */
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            min-width: 280px;
+            max-width: 280px;
+            background-color: #222; /* Dark gray/near black sidebar */
+            color: #fff;
+            transition: all 0.3s;
+            position: fixed; /* Changed to fixed for overlay */
+            top: 0;
+            left: -280px; /* Initially hidden off-screen */
+            height: 100vh; /* Full viewport height */
+            overflow-y: auto; /* Allow scrolling if content overflows */
+            padding-top: 20px; /* Add padding at the top */
+            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            z-index: 1050; /* Higher z-index to be on top */
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+
+        /* Sidebar active state for showing */
+        #sidebar.active {
+            left: 0; /* Slide in */
+        }
+
+        /* Overlay for when sidebar is active on small screens */
+        .overlay {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040; /* Below sidebar, above content */
+            display: none; /* Hidden by default */
+            transition: all 0.3s ease-in-out;
+        }
+
+        .overlay.active {
+            display: block; /* Show when active */
+        }
+
+
+        /* Logo/Brand Styling (adapting from .navbar-brand) */
+        #sidebar h2 {
+            display: flex;
+            flex-direction: column; /* Stack elements vertically */
+            align-items: center; /* Center align */
+            text-align: center; /* Ensure proper text alignment */
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 2px; /* Space below logo */
+            padding: 0 20px; /* Add horizontal padding */
+        }
+
+        /* Styling for the logo image */
+        .logo-image {
+            max-width: 120px; /* Adjust based on your design */
+            height: auto;
+            display: block; /* Ensure it behaves like a block element */
+            margin-top: -40px;
+            margin-bottom: 0px; /* Space below the image */
+        }
+
+
+        #sidebar h2:hover {
+            color: #023c06; /* Dark green on hover */
+        }
+
+
+        /* Navigation Components List (adapting from ul.components) */
+        #sidebar ul { /* Targeting the ul directly */
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            list-style: none; /* Remove default list style */
+            margin: 0; /* Remove default ul margin */
+        }
+
+        #sidebar ul li {
+            margin: 0; /* Remove default li margin */
+        }
+
+        #sidebar ul li a {
+            padding: 15px 20px;
+            font-size: 1.1em;
+            display: flex; /* Use flex for icon and text alignment */
+            align-items: center;
+            color: rgba(255, 255, 255, 0.8);
+            border-left: 3px solid transparent;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+         #sidebar ul li a i {
+             margin-right: 15px; /* Space between icon and text */
+             width: 20px; /* Ensure icons align */
+             text-align: center;
+         }
+
+
+        #sidebar ul li a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: #1d9403; /* Theme green color on hover */
+        }
+
+        #sidebar ul li.active-link > a,
+        #sidebar ul li a[aria-expanded="true"] { /* For dropdowns if any */
+            color: #fff;
+            background: rgba(0,0,0,0.3); /* Darker background for active/expanded */
+            border-left-color: #008e28; /* Darker theme green border for active */
+        }
+
+        /* Dropdown Styles (if you add dropdowns later) */
+        #sidebar a[data-bs-toggle="collapse"] { /* Assuming Bootstrap 5 for future dropdowns */
+             position: relative;
+        }
+        #sidebar .dropdown-toggle::after { /* Bootstrap 5 dropdown arrow */
+             display: block;
+             position: absolute;
+             top: 50%;
+             right: 20px;
+             transform: translateY(-50%);
+             /* Bootstrap JS handles the actual arrow content and rotation */
+        }
+        #sidebar ul ul a { /* Nested dropdown items */
+             font-size: 0.95em !important;
+             padding-left: 40px !important; /* Indent sub-menu items */
+             background: rgba(0, 0, 0, 0.15); /* Slightly different background for sub-items */
+             border-left: none;
+        }
+        #sidebar ul ul a:hover {
+             background: rgba(255, 255, 255, 0.15);
+             border-left: none;
+        }
+
+        /* Sidebar Footer */
+        #sidebar .sidebar-footer {
+            padding: 20px;
+            text-align: center;
+            margin-top: auto; /* Push footer to the bottom if sidebar content is short */
+            border-top: 1px solid rgba(255, 255, 255, 0.1); /* Separator line */
+        }
+        #sidebar .sidebar-footer p {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.6);
+            margin: 0 0 10px 0; /* Space below copyright */
+        }
+        #sidebar .sidebar-footer a.logout-btn { /* Specific class for logout button styling */
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            display: block; /* Make it full width */
+            padding: 10px 15px;
+            border-radius: 5px;
+            background-color: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+         #sidebar .sidebar-footer a.logout-btn:hover {
+             color: #fff;
+             background-color: #c0392b; /* Reddish for logout on hover */
+             border-color: #a93226;
+         }
+
+
+        /* Main Content Area */
+        #main-content {
+            flex-grow: 1;
+            padding: 20px;
+            margin-left: 0;
+            transition: margin-left 0.3s ease;
+            overflow-x: hidden; /* Important for responsive behavior */
+            background-color: #f8f9fa;
+            width: 100%; /* Take remaining width */
+        }
+
+         @media (min-width: 769px) {
+             #main-content {
+                 margin-left: 280px;
+             }
+             #sidebar {
+                 left: 0;
+             }
+             .overlay {
+                 display: none !important;
+             }
+         }
+
+
+        /* Top Bar Styling */
+        #top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 15px 20px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky; /* Keep top-bar visible on scroll */
+            top: 0;
+            z-index: 1030; /* Ensure it's above main content but below sidebar overlay */
+        }
+        #top-bar h1 {
+            margin: 0;
+            color: #333;
+            font-size: 1.6em;
+            font-weight: 600;
+        }
+        #top-bar #hamburger {
+             display: none; /* Hidden by default on larger screens */
+             background: none;
+             border: none;
+             font-size: 1.5em;
+             color: #333;
+             cursor: pointer;
+        }
+        @media (max-width: 768px) {
+             #top-bar #hamburger {
+                 display: block;
+             }
+        }
+
+        /* Django Messages Styling */
+        .django-messages .alert {
+            margin-bottom: 1rem; /* Standard Bootstrap alert margin */
+            /* Other styles for alert are applied inline in the template for dynamic coloring */
+        }
+        .django-messages .alert .close { /* Style for the custom close button */
+            float: right;
+            font-size: 1.25rem;
+            font-weight: bold;
+            line-height: 1;
+            color: #fff; /* Assuming text on alerts is white */
+            text-shadow: 0 1px 0 #000;
+            opacity: 0.75;
+            background-color: transparent;
+            border: 0;
+            padding: 0; /* Remove padding if any was inherited */
+            cursor: pointer;
+        }
+        .django-messages .alert .close:hover {
+            opacity: 1;
+        }
+
+        /* Leaflet map container default height - can be overridden in specific templates */
+        .map-container {
+            height: 400px; /* Default height */
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 10px; /* Space above map */
+            margin-bottom: 20px; /* Space below map */
+            z-index: 0; /* Ensure map is rendered correctly within flow */
+        }
+
+        /* Styling for info-input and validation messages (from previous responses) */
+        .styled-form-table input[type="text"].info-input,
+        .styled-form-table input[type="tel"].info-input,
+        .styled-form-table input[type="number"].info-input,
+        .styled-form-table select.info-input { /* Added select */
+            border-color: #17a2b8; /* Bootstrap's info color */
+            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+        }
+        .validation-message.info {
+            color: #17a2b8; /* Bootstrap's info color */
+        }
+        .styled-form-table input.invalid, /* Ensure these are general */
+        .styled-form-table select.invalid {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        }
+        .styled-form-table input.valid,
+        .styled-form-table select.valid {
+            border-color: #28a745 !important;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+        }
+
+
+        /* Placeholder for additional page-specific styles */
+        {% block styles %}{% endblock %}
+    </style>
+    {% block head_extra %}{% endblock %} <!-- For page-specific head elements like more CSS -->
+</head>
+<body>
+
+    <div class="wrapper">
+        <div id="sidebar">
+            <h2>
+                <img src="/static/Forest_Officer_Home_Templates/wild_eye_logo.png" alt="WildEye Logo" class="logo-image">
+                WildEye
+            </h2>
+            <ul>
+                <!-- Ensure URLs are correctly named in your urls.py -->
+                <li><a href="{% url 'admin_home' %}" id="home-link"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="{% url 'admin_view_forest_divition' %}"><i class="fas fa-tree"></i> Forest Division</a></li>
+                <li><a href="{% url 'admin_view_forest_station' %}"><i class="fas fa-building"></i> Forest Station</a></li>
+                <li><a href="{% url 'admin_view_forest_officer' %}"><i class="fas fa-users"></i> Forest Officers</a></li>
+                <li><a href="{% url 'admin_view_contacts' %}"><i class="fas fa-address-book"></i> Emergency Contacts</a></li>
+                <li><a href="{% url 'admin_view_user_feedback' %}"><i class="fas fa-comments"></i> View Feedback</a></li>
+                <li><a href="{% url 'admin_view_notification_to_officer' %}"><i class="fas fa-paper-plane"></i> Send Notification</a></li>
+                <li><a href="{% url 'admin_view_tech_support_requests' %}"><i class="fas fa-tools"></i> IT Support Requests</a></li>
+                <li><a href="{% url 'admin_view_safety_tips' %}"><i class="fas fa-lightbulb"></i> Manage Safety Tips</a></li>
+                <li><a href="{% url 'admin_view_animal' %}"><i class="fas fa-paw"></i> Animal Database</a></li>
+            </ul>
+            <div class="sidebar-footer">
+                <p>© {% now "Y" %} WildEye</p> {# Dynamic year #}
+                <a href="{% url 'logout_view' %}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <div class="overlay"></div>
+
+        <div id="main-content">
+            {% if messages %}
+                <div class="django-messages"> {# Removed inline padding, rely on .alert margin #}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" style="background-color: {% if message.tags == 'success' %}#d4edda; color: #155724; border-color: #c3e6cb;{% elif message.tags == 'error' %}#f8d7da; color: #721c24; border-color: #f5c6cb;{% elif message.tags == 'warning' %}#fff3cd; color: #856404; border-color: #ffeeba;{% else %}#d1ecf1; color: #0c5460; border-color: #bee5eb;{% endif %}">
+                            {{ message }}
+                            <button type="button" class="close" aria-label="Close"> {# data-dismiss removed for custom JS #}
+                                <span aria-hidden="true">×</span>
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}
+            <!-- Page-specific content will go here -->
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- Leaflet JS - Placed at the end of body for potentially faster page load perception -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const hamburger = document.getElementById('hamburger');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.querySelector('.overlay');
+        const navLinks = document.querySelectorAll('#sidebar ul li a');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            if (window.innerWidth <= 768) {
+                document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            }
+        }
+
+        if (hamburger) {
+            hamburger.addEventListener('click', toggleSidebar);
+        }
+        if (overlay) {
+            overlay.addEventListener('click', toggleSidebar);
+        }
+
+        // Active link logic
+        const currentPath = window.location.pathname;
+        let anActiveLinkWasSet = false;
+        navLinks.forEach(link => {
+            const linkPath = link.getAttribute('href');
+            if (!linkPath) return;
+
+            // Normalize paths to ensure trailing slashes don't break comparison for non-root paths
+            const normalizedCurrentPath = currentPath.endsWith('/') ? currentPath : currentPath + '/';
+            const normalizedLinkPath = linkPath.endsWith('/') ? linkPath : linkPath + '/';
+
+            if (normalizedLinkPath === '/' && normalizedCurrentPath === '/') { // Exact match for true root
+                 if (link.id === 'home-link') { // Only if it's the designated home link
+                    link.closest('li').classList.add('active-link');
+                    anActiveLinkWasSet = true;
+                 }
+            } else if (normalizedLinkPath !== '/' && normalizedCurrentPath.startsWith(normalizedLinkPath)) {
+                // For non-root paths, check if current path starts with link path
+                // This makes parent links active if a child page is visited
+                // To make it more exact, you might need a more complex logic or data attributes
+                link.closest('li').classList.add('active-link');
+                anActiveLinkWasSet = true;
+            }
+        });
+
+        // Fallback for home link if no other specific link matched and current path is a known home path
+        if (!anActiveLinkWasSet) {
+            const homeLinkIdentifiers = ['/admin_home/', '/admin/']; // Add more if needed
+            const isTrulyHomePage = homeLinkIdentifiers.some(p => currentPath === p || (currentPath === p.slice(0, -1) && p.endsWith('/')));
+
+            if (isTrulyHomePage) {
+                const homeLinkAnchor = document.getElementById('home-link');
+                if (homeLinkAnchor) {
+                    // Clear any other active links that might have been set by broad startswith match
+                    document.querySelectorAll('#sidebar ul li.active-link').forEach(li => li.classList.remove('active-link'));
+                    homeLinkAnchor.closest('li').classList.add('active-link');
+                }
+            }
+        }
+
+
+        function handleResize() {
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+        window.addEventListener('resize', handleResize);
+
+        // Initial check on load for small screens
+        if (window.innerWidth <= 768) {
+            sidebar.classList.remove('active'); // Ensure it's closed
+        }
+
+        // Django Messages Dismiss Logic
+        document.querySelectorAll('.django-messages .alert .close').forEach(button => {
+            button.addEventListener('click', function() {
+                const alertNode = this.closest('.alert'); // Use closest to be sure
+                if (alertNode) {
+                    alertNode.style.opacity = '0';
+                    setTimeout(() => {
+                        alertNode.style.display = 'none';
+                        alertNode.remove(); // Optional: remove from DOM
+                    }, 600); // Match CSS transition if any
+                }
+            });
+        });
+        // Optional: Auto-dismiss Django messages
+        setTimeout(function() {
+            document.querySelectorAll('.django-messages .alert').forEach(alertNode => {
+                // Check if it's still visible before trying to dismiss
+                if (alertNode.offsetParent !== null) { // A way to check if visible
+                    alertNode.style.opacity = '0';
+                    setTimeout(() => {
+                        alertNode.style.display = 'none';
+                        alertNode.remove();
+                    }, 600);
+                }
+            });
+        }, 7000); // Dismiss after 7 seconds
+
+    });
+    </script>
+    <script src="{% static 'js/unsaved_changes.js' %}"></script>
+    {% block scripts %}{% endblock %} <!-- For page-specific JavaScript -->
+</body>
+</html>

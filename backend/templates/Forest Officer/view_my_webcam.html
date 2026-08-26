@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>View My Webcam</title>
+    <style>
+        /* Optional: Basic styling for the video element */
+        #webcamFeed {
+            display: block;
+            margin: 20px auto;
+            max-width: 80%; /* Adjust size as needed */
+            border: 1px solid #ccc;
+        }
+        #errorMsg {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Webcam Feed</h1>
+
+    <video id="webcamFeed" autoplay playsinline></video>
+
+    <p id="errorMsg"></p>
+
+    <script>
+        const video = document.getElementById('webcamFeed');
+        const errorMsgElement = document.getElementById('errorMsg');
+
+        // Check if getUserMedia is supported by the browser
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            // Request access to the video stream
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    // Success: Attach the stream to the video element
+                    video.srcObject = stream;
+                    video.onloadedmetadata = function(e) {
+                        video.play(); // Start playing the video
+                    };
+                })
+                .catch(function(err) {
+                    // Error: Handle cases like permission denied or no camera found
+                    console.error("Error accessing the webcam:", err);
+                    errorMsgElement.textContent = `Could not access webcam: ${err.name} - ${err.message}`;
+
+                    // Hide the video element if there's an error
+                    video.style.display = 'none';
+                });
+        } else {
+            // Browser doesn't support getUserMedia
+            errorMsgElement.textContent = 'Your browser does not support webcam access via getUserMedia.';
+            video.style.display = 'none'; // Hide the video element
+        }
+
+        // Optional: Stop the stream when the page is closed or navigated away
+        window.addEventListener('beforeunload', function() {
+            if (video.srcObject) {
+                let stream = video.srcObject;
+                let tracks = stream.getTracks();
+                tracks.forEach(track => track.stop()); // Stop each track (video, audio)
+            }
+        });
+
+    </script>
+</body>
+</html>

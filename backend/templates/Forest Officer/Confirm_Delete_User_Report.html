@@ -1,0 +1,92 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Confirm Delete - {{ report.animal|default:"Report" }} - WildEye Officer{% endblock title %}
+
+{% block page_title %}Confirm Deletion{% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<style>
+    .confirm-delete-card {
+        max-width: 600px; /* Limit width for better readability on wider screens */
+        margin: 2rem auto; /* Center the card on the page */
+        border-radius: 0.75rem;
+        border: none;
+        box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.1);
+    }
+    .confirm-delete-card .card-header {
+        background-color: #dc3545; /* Bootstrap danger color for header */
+        color: white;
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+    .confirm-delete-card .card-body {
+        padding: 1.5rem;
+        font-size: 1.1rem; /* Slightly larger text for emphasis */
+    }
+    .confirm-delete-card .card-footer {
+        background-color: #f8f9fa; /* Light grey for footer */
+        border-bottom-left-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+    .btn-confirm-delete {
+        min-width: 120px; /* Give buttons some minimum width */
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+
+    <div class="card confirm-delete-card">
+        <div class="card-header">
+            <h5 class="mb-0 d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Are you sure?
+            </h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-0">
+                You are about to permanently delete the user report for:
+            </p>
+            <ul class="list-unstyled mt-3 mb-3 ps-3">
+                <li><strong>Animal:</strong> {{ report.animal|default:"Not specified" }}</li>
+                <li><strong>Reported by:</strong>
+                    {% if report.USER %}
+                        {{ report.USER.first_name }} {{ report.USER.last_name }}
+
+                        {% if report.USER.REGULAR_LOGIN %}
+                            ({{ report.USER.REGULAR_LOGIN.username }})
+                        {% else %}
+                            (Username N/A)
+                        {% endif %}                        
+
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </li>
+                <li><strong>Date:</strong> {{ report.date|date:"M. d, Y"|default:"N/A" }}</li>
+                <li><strong>Time:</strong> {{ report.time|time:"h:i A"|default:"N/A" }}</li>
+                {% if report.latitude and report.longitude %}
+                <li><strong>Location:</strong> {{ report.latitude|floatformat:4 }}, {{ report.longitude|floatformat:4 }}</li>
+                {% endif %}
+            </ul>
+            <p class="text-danger fw-bold"><i class="bi bi-trash3-fill me-1"></i>This action cannot be undone.</p>
+        </div>
+        <div class="card-footer text-end">
+            <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger rounded-pill btn-confirm-delete">
+                    <i class="bi bi-trash-fill me-2"></i>Yes, Delete
+                </button>
+            </form>
+            <a href="{% url 'forest_officer_view_user_report' %}" class="btn btn-outline-secondary rounded-pill ms-2 btn-confirm-delete">
+                <i class="bi bi-x-circle me-2"></i>Cancel
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock content %}

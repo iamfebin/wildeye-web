@@ -1,0 +1,80 @@
+/* wildeye/static/Map_Management/style.css */
+
+/* Add any additional styling you want for your map page here */
+/* For example: */
+
+body {
+    background-color: #f4f7f6;
+    color: #333;
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+}
+
+#map {
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+button {
+    display: block;
+    margin: 20px auto;
+    padding: 12px 25px;
+    font-size: 16px;
+    background-color: #28a745; /* Green for clear button */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Optional: Style Leaflet map attribution for better visibility */
+.leaflet-control-attribution {
+    font-size: 0.8em;
+    color: #666;
+}
+
+/* Style for Leaflet.draw tooltips */
+.leaflet-draw-tooltip {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+/* Style for other station boundaries (lighter) */
+.leaflet-container .other-station-boundary {
+    stroke: #ff02ff; /* Lighter blue */
+    stroke-width: 1.5px;
+    fill: #ff02ff; /* Light blue */
+    fill-opacity: 0.1; /* Very faint fill */
+}
+
+/* Style for the current officer's station boundary (more prominent) */
+.leaflet-container .officer-station-boundary {
+    stroke: #007bff; /* Blue */
+    stroke-width: 2px;
+    fill: #007bff;
+    fill-opacity: 0.1;
+}

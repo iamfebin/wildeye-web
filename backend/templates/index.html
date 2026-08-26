@@ -1,0 +1,181 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WildEye - Login</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <!-- Example using Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Add icon library if needed e.g., Font Awesome for eye icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+    {# --- New: Message Modal Overlay --- #}
+    <div id="message-overlay" class="modal-overlay">
+        <div class="message-modal-content">
+            <div class="messages-container">
+                {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    {{ message }}
+                    {# Add an OK button to dismiss the message #}
+                    <button type="button" class="alert-ok-button">OK</button>
+                </div>
+                {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {# --- End Message Modal Overlay --- #}
+
+    <div id="loading-screen">
+        <img src="../static/346.gif" alt="Loading...">
+        <p id="loading-text">Loading <span class="dot"></span><span class="dot"></span><span class="dot"></span> </p>
+    </div>
+
+    <div id="content" style="display: none;">
+        <!--<h1>Welcome to my page!</h1>
+        <p>This is the main content of the page.</p> -->
+    </div>
+
+    <div id="animated-background">
+        <div id="gradient-bg"></div>
+
+        <video id="background-video" autoplay loop muted playsinline>
+            <source src="../static/Beautiful Deer Grazing in pasture video).mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
+
+
+        <!--  <div id="canopy-bg">
+            Using CSS background for silhouette 
+        </div> -->
+        <!-- Placeholder for particles - complex JS/Canvas needed for full effect -->
+        <div id="particles-container">
+            <!-- Particles would be generated here by JS if using Canvas -->
+            <!-- CSS Approximation (Example - less dynamic): -->
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+    </div>
+
+    <div id="login-container">
+        <div id="logo-container">
+            <!-- Replace with your actual logo file -->
+            <img src="../static/wild_eye_logo.png" alt="WildEye Logo" id="logo">
+        </div>
+
+        <form action="/login_post/" method="post">
+            {% csrf_token %}
+            <h2>Wild<span class="highlight-eye">Eye</span></h2>
+
+            <div class="input-group">
+                <input type="text" id="username" name="username" required autocomplete="username">
+                <label for="username">Username</label>
+            </div>
+
+            <div class="input-group password-group">
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+                <label for="password">Password</label>
+                <span id="togglePassword" class="toggle-password">
+                    <i class="fas fa-eye"></i>
+                    <!-- Alternative icon class: fas fa-eye-slash -->
+                </span>
+                <!-- Simple ripple effect placeholder (border color animation handles feedback) -->
+                <div class="ripple"></div>
+            </div>
+
+            <div class="form-options">
+                <div class="remember-me">
+                    <input type="checkbox" id="rememberMe" name="rememberMe">
+                    <label for="rememberMe">
+                        <span class="checkmark"></span> Remember Me
+                    </label>
+                </div>
+                <a href="#" id="forgot-password">Forgot Password?</a>
+            </div>
+
+            <button type="submit" id="login-button">
+                <span class="button-text">Login</span>
+                <span class="loading-indicator">
+                    <!-- Radar Sweep visual can be done with borders/animation -->
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Forgot Password Modal (Initially Hidden) -->
+    <div id="forgot-password-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">×</span> <!-- Your JS likely uses this class to close -->
+            <h2>Officer Password Reset</h2> <!-- Changed title -->
+            <p>Enter your officer username or registered email address. If a match is found, a password reset link will
+                be sent to the officer's email.</p> <!-- Changed description -->
+
+            <!-- Form submits to the officer_forgot_password_request view -->
+            <form method="post" action="{% url 'officer_forgot_password_request' %}">
+                {% csrf_token %} <!-- CSRF token for this form -->
+                <div class="input-group" style="margin-bottom: 15px;"> <!-- Added some margin for spacing -->
+                    <!-- Changed to "text" to accept both, and added "name" attribute -->
+                    <input type="text" id="fp_identifier" name="identifier" placeholder="Your Officer Email or Username"
+                        required style="width: 100%; padding: 10px; box-sizing: border-box;">
+                    <!-- You might want to add a <label> here too, or adjust styling -->
+                </div>
+                <button type="submit"
+                    style="padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; width:100%;">Send
+                    Reset Link</button>
+            </form>
+        </div>
+    </div>
+
+
+    <script src="../static/script.js"></script>
+
+    <script>
+        // Ensure your script.js handles opening and closing this modal.
+        // Example of what might be in your script.js (or you can put it here):
+
+        const forgotPasswordModal = document.getElementById('forgot-password-modal');
+        const openForgotPasswordLink = document.getElementById('forgot-password');
+        const closeModalButton = forgotPasswordModal.querySelector('.close-modal'); // Assumes .close-modal is unique or first one
+
+        if (openForgotPasswordLink) {
+            openForgotPasswordLink.addEventListener('click', function (event) {
+                event.preventDefault(); // Prevent default anchor behavior
+                if (forgotPasswordModal) {
+                    forgotPasswordModal.style.display = 'block'; // Or add a class to show it
+                }
+            });
+        }
+
+        if (closeModalButton) {
+            closeModalButton.addEventListener('click', function () {
+                if (forgotPasswordModal) {
+                    forgotPasswordModal.style.display = 'none'; // Or remove the class
+                }
+            });
+        }
+
+        // Optional: Close modal if clicked outside of modal-content
+        window.addEventListener('click', function (event) {
+            if (event.target === forgotPasswordModal) {
+                forgotPasswordModal.style.display = 'none';
+            }
+        });
+
+    </script>
+
+
+</body>
+
+</html>

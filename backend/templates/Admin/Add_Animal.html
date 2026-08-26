@@ -1,0 +1,255 @@
+{% extends 'Admin/admin_base.html' %}
+{% load static %}
+
+{% block title %}Add New Animal - {{ block.super }}{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    .form-container {
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        max-width: 700px; /* Or your preferred max-width */
+        margin: 0 auto; /* Center the form if main-content is wider */
+    }
+    .form-container h2.form-title { /* Specific class for form title */
+        text-align: center;
+        margin-bottom: 25px;
+        color: #333;
+        font-size: 1.8em; /* Slightly larger than top-bar h1 */
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="file"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box; /* Important for 100% width including padding */
+        font-size: 1rem;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .form-group input[type="submit"] {
+        background-color: #28a745; /* Green - Bootstrap success */
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+        display: block;
+        width: 100%; /* Make button full width of its container */
+    }
+    .form-group input[type="submit"]:hover {
+        background-color: #218838; /* Darker green */
+    }
+    .form-group input[type="submit"]:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    .validation-message {
+        font-size: 0.9em;
+        margin-top: 5px;
+        display: block; 
+        min-height: 1.2em; /* Prevents layout shifts */
+    }
+    .validation-message.error {
+        color: #dc3545; /* Red - Bootstrap danger */
+    }
+    .validation-message.success {
+        color: #28a745; /* Green - Bootstrap success */
+    }
+    .validation-message.checking {
+        color: #007bff; /* Blue - Bootstrap info */
+    }
+
+    /* Leverage admin_base.html's .invalid and .valid styles if available, 
+       or define them explicitly for inputs within .form-group */
+    .form-group input.invalid,
+    .form-group select.invalid,
+    .form-group textarea.invalid {
+        border-color: #dc3545 !important; 
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    .form-group input.valid,
+    .form-group select.valid,
+    .form-group textarea.valid {
+        border-color: #28a745 !important;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Add New Animal</h1>
+    <button id="hamburger"><i class="fas fa-bars"></i></button>
+</div>
+
+<div class="form-container">
+    <h2 class="form-title">Enter Animal Details</h2>
+    <form action="{% url 'admin_add_animal_post' %}" method="post" enctype="multipart/form-data" id="addAnimalForm">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <input type="text" name="name" id="name" required pattern="^[a-zA-Z\s]+$" title="Please enter only letters and spaces."/>
+            <span id="nameValidationMessage" class="validation-message"></span>
+        </div>
+
+        <div class="form-group">
+            <label for="details">Details:</label>
+            <textarea name="details" id="details" rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="image">Image:</label>
+            <input type="file" name="image" id="image" accept="image/*" required />
+            <small class="form-text text-muted">Upload an image of the animal.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="type">Type:</label>
+                <select id="type" name="select" class="form-control" required>
+                    <option value="" disabled {% if not animal.type %}selected{% endif %}>-- Select Type --</option>
+                    <option value="Extinct (EX)" {% if animal.type == 'Extinct (EX)' %}selected{% endif %}>Extinct (EX)</option>
+                    <option value="Extinct in the Wild (EW)" {% if animal.type == 'Extinct in the Wild (EW)' %}selected{% endif %}>Extinct in the Wild (EW)</option>
+                    <option value="Critically Endangered (CR)" {% if animal.type == 'Critically Endangered (CR)' %}selected{% endif %}>Critically Endangered (CR)</option>
+                    <option value="Endangered (EN)" {% if animal.type == 'Endangered (EN)' %}selected{% endif %}>Endangered (EN)</option>
+                    <option value="Vulnerable (VU)" {% if animal.type == 'Vulnerable (VU)' %}selected{% endif %}>Vulnerable (VU)</option>
+                    <option value="Near Threatened (NT)" {% if animal.type == 'Near Threatened (NT)' %}selected{% endif %}>Near Threatened (NT)</option>
+                    <option value="Least Concern (LC)" {% if animal.type == 'Least Concern (LC)' %}selected{% endif %}>Least Concern (LC)</option>
+                    {# Your existing types from the old form #}
+                    <option value="Data Deficient (DD)" {% if animal.type == 'Data Deficient (DD)' %}selected{% endif %}>Data Deficient (DD)</option>
+                    <option value="Not Evaluated (NE)" {% if animal.type == 'Not Evaluated (NE)' %}selected{% endif %}>Not Evaluated (NE)</option>
+                </select>
+        </div>
+
+        <div class="form-group">
+            <input type="submit" id="submitButton" value="Add Animal" />
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const nameValidationMessage = document.getElementById('nameValidationMessage');
+    const addAnimalForm = document.getElementById('addAnimalForm');
+    const submitButton = document.getElementById('submitButton'); // Get the submit button
+    let nameDebounceTimer;
+    let isNameValidByServer = false; // Track server validation status
+
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            clearTimeout(nameDebounceTimer);
+            const nameValue = nameInput.value.trim();
+            isNameValidByServer = false; // Reset on new input
+            submitButton.disabled = true; // Disable submit button during validation or if invalid
+
+            // Clear previous validation state visuals
+            nameInput.classList.remove('valid', 'invalid');
+            nameValidationMessage.textContent = '';
+            nameValidationMessage.className = 'validation-message';
+
+            if (nameValue.length === 0) {
+                // Handled by 'required' attribute, but good to disable submit
+                return;
+            }
+            
+            if (!/^[a-zA-Z\s]+$/.test(nameValue)) {
+                nameInput.classList.add('invalid');
+                nameValidationMessage.textContent = 'Name can only contain letters and spaces.';
+                nameValidationMessage.classList.add('error');
+                return; // Don't check server if basic pattern fails
+            }
+
+            nameValidationMessage.textContent = 'Checking...';
+            nameValidationMessage.classList.add('checking');
+
+            nameDebounceTimer = setTimeout(() => {
+                fetch(`{% url 'check_animal_exists' %}?name=${encodeURIComponent(nameValue)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.exists) {
+                            nameInput.classList.remove('valid');
+                            nameInput.classList.add('invalid');
+                            nameValidationMessage.textContent = 'This animal name already exists.';
+                            nameValidationMessage.className = 'validation-message error';
+                            isNameValidByServer = false;
+                        } else {
+                            nameInput.classList.remove('invalid');
+                            nameInput.classList.add('valid');
+                            nameValidationMessage.textContent = 'Name is available.';
+                            nameValidationMessage.className = 'validation-message success';
+                            isNameValidByServer = true;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking animal name:', error);
+                        nameValidationMessage.textContent = 'Could not validate name. Please try again.';
+                        nameValidationMessage.className = 'validation-message error';
+                        nameInput.classList.remove('valid', 'invalid'); // Neutral state on error
+                        isNameValidByServer = false; // Assume invalid on error
+                    })
+                    .finally(() => {
+                        // Enable submit button only if name is valid AND other required fields are potentially filled
+                        // This simple logic just checks the name field status
+                        if(isNameValidByServer && nameInput.checkValidity()){ // checkValidity for pattern etc.
+                             submitButton.disabled = false;
+                        } else {
+                             submitButton.disabled = true;
+                        }
+                    });
+            }, 500); // Debounce for 500ms
+        });
+
+        // Initial state: disable submit button until name is validated
+        if (submitButton) {
+            submitButton.disabled = true; 
+        }
+    }
+
+    if (addAnimalForm) {
+        addAnimalForm.addEventListener('submit', function(event) {
+            if (nameInput && (nameInput.classList.contains('invalid') || !isNameValidByServer)) {
+                event.preventDefault(); 
+                nameValidationMessage.textContent = 'Please ensure the animal name is valid and available.';
+                nameValidationMessage.className = 'validation-message error';
+                nameInput.focus();
+                // alert('The animal name is invalid or already exists. Please correct it.');
+            }
+            // Add more comprehensive client-side validation for other fields if needed here
+            // For example, check if file is selected for image, if type is selected etc.
+            // For now, relying on `required` attribute for other fields.
+        });
+    }
+});
+</script>
+{% endblock %}

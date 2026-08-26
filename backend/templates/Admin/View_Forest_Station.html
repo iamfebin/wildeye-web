@@ -1,0 +1,386 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Forest Station Dashboard{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Using very similar styles to the Forest Division page for consistency */
+    #page-content-wrapper {
+        padding: 25px 30px;
+        background-color: #f4f7f6;
+    }
+
+    #top-bar h1 { /* Style for the main title from base template */
+        font-size: 2em;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .page-header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #dde2e7;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-header-actions .title-info h2 {
+        margin: 0;
+        font-size: 1.6em;
+        font-weight: 600;
+        color: #34495e;
+    }
+    .page-header-actions .title-info .item-count {
+        font-size: 0.9em;
+        color: #7f8c8d;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .actions-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary-action {
+        background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 12px 25px;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+    .btn-primary-action i {
+        margin-right: 10px;
+        font-size: 1.1em;
+    }
+    .btn-primary-action:hover, .btn-primary-action:focus {
+        background-image: linear-gradient(to right, #0056b3 0%, #003f80 100%);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border-radius: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 4px;
+        min-width: 500px;
+    }
+    .search-box input[type="text"] {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 20px 0 0 20px;
+        font-size: 1em;
+        flex-grow: 1;
+        outline: none;
+        color: #333;
+    }
+    .search-box input[type="text"]::placeholder { color: #95a5a6; }
+    .search-box button[type="submit"] {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 0 20px 20px 0;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    .search-box button[type="submit"] i { margin-right: 8px; }
+    .search-box button[type="submit"]:hover { background-color: #218838; }
+
+    .data-table-container {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+    }
+
+    .responsive-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .responsive-table thead th {
+        background-color: #e9edf2;
+        color: #34495e;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 18px 15px; /* Adjusted padding slightly for more columns */
+        text-align: center;
+        border-bottom: 2px solid #d1d8e0;
+        white-space: nowrap; /* Prevent header text from wrapping */
+    }
+    .responsive-table tbody tr {
+        border-bottom: 1px solid #ecf0f1;
+        transition: background-color 0.2s ease-in-out;
+    }
+    .responsive-table tbody tr:last-child { border-bottom: none; }
+    .responsive-table tbody tr:hover { background-color: #f8f9fa; }
+    .responsive-table tbody td {
+        padding: 16px 15px; /* Adjusted padding slightly */
+        color: #555;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.95em; /* Slightly smaller font for more data */
+    }
+    .responsive-table tbody td.text-left-align { text-align: left; }
+
+    /* Creative styling for Latitude/Longitude */
+    .location-cell a {
+        color: #007bff; /* Link color */
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        padding: 5px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    .location-cell a i {
+        margin-right: 6px;
+        color: #28a745; /* Green map marker */
+    }
+    .location-cell a:hover {
+        background-color: #e9ecef;
+        color: #0056b3;
+    }
+    .location-cell span.coords { /* If not clickable, for responsive label */
+        display: block;
+        font-size: 0.9em;
+        color: #6c757d;
+    }
+
+
+    .action-button {
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        margin: 0 5px;
+        font-size: 0.85em;
+        font-weight: 500;
+        transition: all 0.25s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        min-width: 90px;
+        justify-content: center;
+    }
+    .action-button i { margin-right: 7px; font-size: 0.95em; }
+    .action-button.edit { background-color: #ffc107; color: #333; border-color: #e0a800; }
+    .action-button.edit:hover { background-color: #e0a800; transform: scale(1.05); box-shadow: 0 2px 8px rgba(224, 168, 0, 0.3); }
+    .action-button.delete { background-color: #dc3545; color: white; border-color: #c82333; }
+    .action-button.delete:hover { background-color: #c82333; transform: scale(1.05); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: #fff;
+    }
+    .empty-state i { font-size: 4em; color: #bdc3c7; margin-bottom: 20px; }
+    .empty-state p { font-size: 1.2em; color: #7f8c8d; margin-bottom: 5px; }
+    .empty-state .search-query-display { font-style: italic; color: #95a5a6; }
+
+    @media (max-width: 992px) { /* Adjust breakpoint for more columns if needed */
+        .responsive-table thead { display: none; }
+        .responsive-table tr {
+            display: block;
+            margin-bottom: 20px;
+            border: 1px solid #dde2e7;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background-color: #fff;
+        }
+        .responsive-table td {
+            display: block;
+            text-align: right !important; /* Ensure alignment for all cells */
+            padding-left: 45% !important; /* Adjust space for label */
+            position: relative;
+            border-bottom: 1px dashed #ecf0f1;
+            font-size: 0.9em; /* Adjust font size for stacked view */
+        }
+        .responsive-table td:last-child { border-bottom: none; }
+        .responsive-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 15px;
+            width: calc(45% - 30px);
+            padding-right: 10px;
+            white-space: nowrap;
+            font-weight: 600;
+            text-align: left;
+            color: #34495e;
+            font-size: 0.9em;
+        }
+        .responsive-table td.actions-cell { text-align: center !important; padding: 15px !important; }
+        .responsive-table td.actions-cell::before { display: none; }
+        .responsive-table td.location-cell { text-align: right !important; } /* Ensure map link aligns right */
+        .responsive-table td.location-cell a { justify-content: flex-end; }
+        .responsive-table td.location-cell::before { /* Special handling if needed */ }
+    }
+    @media (max-width: 768px) {
+        #top-bar h1 { font-size: 1.6em; }
+        .page-header-actions .title-info h2 { font-size: 1.3em; }
+        .actions-toolbar { justify-content: center; }
+        .search-box { min-width: unset; width: 100%; margin-top: 10px; }
+        .btn-primary-action { width: 100%; justify-content: center; margin-top: 10px; }
+        .responsive-table td { padding-left: 50% !important; }
+        .responsive-table td::before { width: calc(50% - 30px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="page-header-actions">
+        <div class="title-info">
+            <h2>Forest Station Management</h2>
+            <span class="item-count">
+                {% if stations %}
+                    {{ stations|length }} Station{{ stations|length|pluralize }}
+                {% else %}
+                    0 Stations
+                {% endif %}
+            </span>
+        </div>
+        <div class="actions-toolbar">
+             <form id="searchForm" name="searchForm" method="post" action="" class="search-box">
+                {% csrf_token %}
+                <input type="text" name="textfield" placeholder="Search by Name, Place, Division..." value="{{ request.POST.textfield|default_if_none:'' }}" aria-label="Search Forest Stations" />
+                <button type="submit" name="Submit" value="Search">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            <a href="{% url 'admin_add_forest_station' %}" class="btn-primary-action"> {# Assuming URL name exists #}
+                <i class="fas fa-plus-circle"></i> Add New Station
+            </a>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if stations %}
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Name</th>
+                        <th>Place</th>
+                        <th>Division</th>
+                        <th>Phone</th>
+                        <th>Location (Lat, Long)</th> {# Combined Lat/Long into one header #}
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for station in stations %}
+                    <tr>
+                        <td data-label="S.No">{{ forloop.counter }}</td>
+                        <td data-label="Name" class="text-left-align">{{ station.name }}</td>
+                        <td data-label="Place" class="text-left-align">{{ station.place }}</td>
+                        <td data-label="Division" class="text-left-align">{{ station.DIVISION.name }}</td>
+                        <td data-label="Phone">{{ station.phone }}</td>
+                        <td data-label="Location" class="location-cell">
+                            {% if station.latitude and station.longitude %}
+                            <a href="https://www.google.com/maps?q={{ station.latitude }},{{ station.longitude }}" target="_blank" title="View {{ station.name }} on Map">
+                                <i class="fas fa-map-marker-alt"></i> {{ station.latitude|floatformat:4 }}, {{ station.longitude|floatformat:4 }}
+                            </a>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions" class="actions-cell">
+                            <a href="{% url 'admin_edit_forest_station' station.id %}" class="action-button edit" aria-label="Edit {{ station.name }}">
+                                <i class="fas fa-pencil-alt"></i> Edit
+                            </a>
+                            <a href="{% url 'admin_delete_forest_station' station.id %}" class="action-button delete"
+                               onclick="return confirm('Are you sure you want to delete station \'{{ station.name|escapejs }}\'? This action cannot be undone.');" aria-label="Delete {{ station.name }}">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-map-signs"></i> {# Different icon for stations #}
+                {% if request.POST.textfield %}
+                    <p>No Forest Stations Found</p>
+                    <span class="search-query-display">Your search for "{{ request.POST.textfield|escape }}" did not match any stations.</span>
+                {% else %}
+                    <p>No Forest Stations Available</p>
+                    <span class="search-query-display">Get started by adding a new forest station.</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler
+    const currentPath = window.location.pathname;
+    // Adjust these paths based on your actual URL names/patterns
+    const stationRelatedPaths = [
+        '/admin_view_forest_station/', // Make sure this matches your actual URL
+        '{% url "admin_add_forest_station" %}' // Use Django URL tag if view name is fixed
+    ];
+    const forestStationBaseLink = document.querySelector('#sidebar ul li a[href="/admin_view_forest_station/"]'); // Main link
+
+    let isActive = stationRelatedPaths.some(linkPath => currentPath === linkPath) ||
+                   currentPath.startsWith('/admin_edit_forest_station/'); // For edit pages
+
+    if (forestStationBaseLink && isActive) {
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        forestStationBaseLink.closest('li').classList.add('active-link');
+    }
+
+    // Table row animation
+    const tableRows = document.querySelectorAll('.responsive-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = 0;
+    });
+});
+
+// Ensure fadeInUp keyframes are defined (ideally in base or shared CSS, or injected once)
+if (!document.getElementById('fadeInUpKeyframes')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "fadeInUpKeyframes"; // Prevent multiple injections
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }`;
+    document.head.appendChild(styleSheet);
+}
+</script>
+{% endblock %}

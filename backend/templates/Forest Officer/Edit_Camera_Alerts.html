@@ -1,0 +1,148 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Edit Camera Alert - WildEye Officer{% endblock title %}
+
+{% block page_title %}Modify Camera Alert (ID: {{ alert.id }}){% endblock page_title %}
+
+{% block extra_head %}
+{{ block.super }}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_blue.css"> <!-- Optional Flatpickr theme -->
+
+<style>
+    .form-card-camera-alert-edit {
+        border-radius: 0.75rem;
+    }
+    .form-card-camera-alert-edit .card-header {
+        background-color: #ffc107; /* Warning yellow for edit */
+        color: #333; /* Darker text for contrast */
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+    }
+
+    /* CSS for the image preview in help_text */
+    .form-card-camera-alert-edit .form-text img { /* Styles the img tag within the help_text div */
+        max-height: 100px;
+        max-width: 150px;
+        border-radius: 0.25rem;
+        border: 1px solid #ddd;
+        margin-top: 0.25rem;
+        display: block; /* Ensures margin applies correctly if help_text is just the image */
+    }
+
+    /* Specific styling if form-control-lg is on original inputs that Flatpickr replaces,
+       to ensure the visible Flatpickr input also appears large. */
+    input.flatpickr-date.form-control-lg + input.flatpickr-input,
+    input.flatpickr-time.form-control-lg + input.flatpickr-input {
+        height: calc(1.5em + 1rem + 2px); /* Matches Bootstrap's form-control-lg height */
+        padding: 0.5rem 1rem; /* Matches Bootstrap's form-control-lg padding */
+        font-size: 1.25rem; /* Matches Bootstrap's form-control-lg font-size */
+        line-height: 1.5;
+        border-radius: 0.3rem; /* Matches Bootstrap's form-control-lg border-radius */
+        width: 100%; /* Ensure it takes full width of its container */
+    }
+
+    .actions-footer {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between; /* Pushes "Cancel" and "Save" buttons apart */
+        align-items: center;
+    }
+</style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+
+            <div class="card shadow-sm form-card-camera-alert-edit">
+                <div class="card-header py-3">
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-camera-video-fill me-2"></i> Edit Camera Alert Record
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" enctype="multipart/form-data"> {# enctype is crucial for file uploads #}
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger rounded-3 shadow-sm">
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {# Iterate through form fields for Bootstrap styling #}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-medium">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                
+                                {{ field }} {# Renders the widget with classes from forms.py #}
+                                
+                                {% if field.help_text %}
+                                    <div class="form-text text-muted mt-1"> {# Ensure some space for help_text #}
+                                        {{ field.help_text|safe }} {# |safe filter is important for HTML in help_text #}
+                                    </div>
+                                {% endif %}
+                                {% for error in field.errors %}
+                                    <div class="invalid-feedback d-block mt-1">
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="actions-footer">
+                            <a href="{% url 'forest_officer_view_camera_alerts' %}" class="btn btn-outline-secondary rounded-pill shadow-sm">
+                                <i class="bi bi-x-circle-fill me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning rounded-pill shadow-sm px-4 py-2">
+                                <i class="bi bi-save-fill me-2"></i>Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Flatpickr for date fields (target by class from forms.py)
+    document.querySelectorAll(".flatpickr-date").forEach(function(element) {
+        flatpickr(element, {
+            altInput: true,
+            altFormat: "F j, Y",    // User-friendly display format
+            dateFormat: "Y-m-d",    // Format submitted to the server
+            // Consider minDate/maxDate logic for edit forms if needed
+        });
+    });
+
+    // Initialize Flatpickr for time fields (target by class from forms.py)
+    document.querySelectorAll(".flatpickr-time").forEach(function(element) {
+        flatpickr(element, {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: "H:i",       // Server format (24-hour)
+            altInput: true,
+            altFormat: "h:i K",      // User-friendly display format (12-hour AM/PM)
+            minuteIncrement: 15,
+        });
+    });
+});
+</script>
+{% endblock extra_scripts %}

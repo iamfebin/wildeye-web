@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Camera Alert</title>
+</head>
+<body>
+    <h1>Edit Camera Alert (ID: {{ alert.id }})</h1>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }} {# Renders form fields as paragraphs #}
+        <button type="submit">Save Changes</button>
+        <a href="{% url 'admin_view_camera_alerts' %}">Cancel</a>
+    </form>
+
+</body>
+</html>

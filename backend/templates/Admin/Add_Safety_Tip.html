@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Safety Tip - WildEye Admin</title>
+    <style>
+        /* Basic CSS for a clean look - you can integrate your existing admin CSS */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form div {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        textarea,
+        select,
+        input[type="file"] {
+            width: calc(100% - 22px); /* Adjust for padding and border */
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .radio-group label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .radio-group input[type="radio"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        .file-upload-section {
+            border: 1px dashed #ccc;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .image-input-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .image-input-group input[type="file"] {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        .image-input-group input[type="text"] {
+            width: 150px; /* Smaller width for caption */
+        }
+        .add-image-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        button[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        button[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Add New Safety Tip</h2>
+        <form action="{% url 'admin_add_safety_tip_post' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div>
+                <label for="title">Tip Title:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="description">Description (Optional):</label>
+                <textarea id="description" name="description"></textarea>
+            </div>
+            <div>
+                <label for="category">Category (Optional, e.g., 'Animal Encounters', 'Survival'):</label>
+                <input type="text" id="category" name="category">
+            </div>
+            <div>
+                <label for="thumbnail">Thumbnail Image (for card display):</label>
+                <input type="file" id="thumbnail" name="thumbnail" accept="image/*" required>
+            </div>
+
+            <div>
+                <label>Content Type:</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="content_type" value="image_gallery" id="radio_image_gallery" checked> Image Gallery
+                    </label>
+                    <label>
+                        <input type="radio" name="content_type" value="pdf_document" id="radio_pdf_document"> PDF Document
+                    </label>
+                </div>
+            </div>
+
+            <div id="image_gallery_section" class="file-upload-section">
+                <label>Images for Gallery:</label>
+                <div id="image_inputs_container">
+                    <div class="image-input-group">
+                        <input type="file" name="new_image_files" accept="image/*" required> {# CHANGED NAME #}
+                        <input type="text" name="new_image_captions" placeholder="Caption (Optional)"> {# CHANGED NAME #}
+                    </div>
+                </div>
+                <button type="button" class="add-image-btn" onclick="addNewImageInputForAdd()">Add More Image</button> {# CHANGED JS FUNCTION NAME #}
+            </div>
+
+            <div id="pdf_document_section" class="file-upload-section" style="display: none;">
+                <label for="pdf_file">PDF File:</label>
+                <input type="file" id="pdf_file" name="pdf_file" accept="application/pdf">
+            </div>
+
+            <button type="submit">Add Safety Tip</button>
+        </form>
+        <a href="{% url 'admin_view_safety_tips' %}" class="back-link">Back to View Safety Tips</a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const radioImageGallery = document.getElementById('radio_image_gallery');
+            const radioPdfDocument = document.getElementById('radio_pdf_document');
+            const imageGallerySection = document.getElementById('image_gallery_section');
+            const pdfDocumentSection = document.getElementById('pdf_document_section');
+
+            function toggleContentTypeSections() {
+                if (radioImageGallery.checked) {
+                    imageGallerySection.style.display = 'block';
+                    pdfDocumentSection.style.display = 'none';
+                    // Make image files required for gallery
+                    document.querySelectorAll('#image_inputs_container input[type="file"]').forEach(input => input.setAttribute('required', 'required'));
+                    document.getElementById('pdf_file').removeAttribute('required');
+                } else {
+                    imageGallerySection.style.display = 'none';
+                    pdfDocumentSection.style.display = 'block';
+                    // Make PDF file required for PDF document
+                    document.getElementById('pdf_file').setAttribute('required', 'required');
+                    document.querySelectorAll('#image_inputs_container input[type="file"]').forEach(input => input.removeAttribute('required'));
+                }
+            }
+
+            radioImageGallery.addEventListener('change', toggleContentTypeSections);
+            radioPdfDocument.addEventListener('change', toggleContentTypeSections);
+
+            // Initial call to set correct visibility
+            toggleContentTypeSections();
+        });
+
+        // Renamed to be specific for the "Add" page
+        function addNewImageInputForAdd() {
+            const container = document.getElementById('image_inputs_container');
+            const newDiv = document.createElement('div');
+            newDiv.className = 'image-input-group';
+            newDiv.innerHTML = `
+                <input type="file" name="new_image_files" accept="image/*" required> {# CHANGED NAME #}
+                <input type="text" name="new_image_captions" placeholder="Caption (Optional)"> {# CHANGED NAME #}
+                <button type="button" onclick="this.parentNode.remove()">Remove</button>
+            `;
+            container.appendChild(newDiv);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Dangerous Areas</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# Django CSRF token and officer station data provided by the view #}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {% if officer_station_id %}
+        <meta name="officer-station-id" content="{{ officer_station_id }}">
+    {% endif %}
+    {% if officer_latitude and officer_longitude %}
+        <meta name="officer-station-latitude" content="{{ officer_latitude }}">
+        <meta name="officer-station-longitude" content="{{ officer_longitude }}">
+    {% endif %}
+    {% if officer_username %}
+        <meta name="officer-username" content="{{ officer_username }}">
+    {% endif %}
+
+    {# Leaflet CSS #}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    {# Leaflet.draw CSS #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+    {# Leaflet-control-geocoder CSS #}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+
+    {# Your Custom CSS #}
+    <link rel="stylesheet" href="{% static 'Map_Management/style.css' %}">
+
+    <style>
+        /* Minimal CSS for map display */
+        #map {
+            height: 600px; /* Adjust height as needed */
+            width: 100%;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        h1 {
+            color: #333;
+        }
+        /* Style for the legend */
+        .map-legend {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9em;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+        .legend-color-box {
+            width: 20px;
+            height: 15px;
+            border: 1px solid #666;
+            margin-right: 8px;
+        }
+        .legend-color-box.own-station {
+            background-color: rgba(0, 123, 255, 0.1); /* Matches officer-station-boundary fill */
+            border-color: #007bff; /* Matches officer-station-boundary stroke */
+        }
+        .legend-color-box.other-station {
+            background-color: rgba(255, 79, 214, 0.05); /* Matches other-station-boundary fill */
+            border-color: #ff02ff; /* Matches other-station-boundary stroke */
+        }
+        .legend-color-box.dangerous-area {
+            background-color: rgba(255, 0, 0, 0.2); /* Matches dangerous area fill */
+            border-color: #FF0000; /* Matches dangerous area stroke */
+        }
+    </style>
+</head>
+<body>
+    <h1>Manage Dangerous Areas</h1>
+    <p><a href="{% url 'forest_officer_home' %}">Back to Officer Home</a></p>
+
+    <div class="map-legend">
+        <div class="legend-item">
+            <span class="legend-color-box own-station"></span>
+            <span>Your Assigned Station Boundary</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color-box other-station"></span>
+            <span>Other Station Boundaries</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-color-box dangerous-area"></span>
+            <span>Dangerous Area Polygon</span>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <button id="clear-areas">Clear All My Dangerous Areas</button>
+
+    {# Leaflet JavaScript #}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    {# Leaflet.draw JavaScript #}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    {# Leaflet-control-geocoder JavaScript #}
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    {# Turf.js for spatial operations #}
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+    {# Your Custom Script #}
+    <script src="{% static 'Map_Management/script.js' %}"></script>
+</body>
+</html>
+
+
+

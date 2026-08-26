@@ -1,0 +1,440 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Officer Dashboard - WildEye{% endblock title %}
+
+{% block page_title %}Forest Officer Dashboard{% endblock page_title %}
+
+{% block extra_head %}
+{# Main Leaflet CSS - Still needed #}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+{# Meta tags for station location - Ensure your dashboard view provides this context #}
+{% if officer_station_id %}
+<meta name="officer-station-id" content="{{ officer_station_id }}">
+{% endif %}
+{% if officer_latitude and officer_longitude %}
+<meta name="officer-station-latitude" content="{{ officer_latitude }}">
+<meta name="officer-station-longitude" content="{{ officer_longitude }}">
+{% else %}
+<meta name="officer-station-latitude" content="9.9312">
+<meta name="officer-station-longitude" content="76.2673">
+<meta name="station-location-unavailable" content="true">
+{% endif %}
+
+<style>
+    #dashboard-station-map-container {
+        overflow: hidden;
+    }
+    #dashboard-station-map-container .card-body {
+        display: flex;
+        flex-direction: column;
+    }
+    #dashboard-station-map-container #map {
+        height: 100%;
+        min-height: 350px;
+        width: 100%;
+        border: none;
+        flex-grow: 1;
+    }
+    #dashboard-station-map-container.map-fullscreen {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 99999 !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+</style>
+{% endblock extra_head %}
+
+
+{% block extra_scripts %}
+<!-- Chart.js - for Alerts Trend chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+{# Main Leaflet JavaScript - Still needed #}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const stationIdMeta = document.querySelector('meta[name="officer-station-id"]');
+        const latMeta = document.querySelector('meta[name="officer-station-latitude"]');
+        const lngMeta = document.querySelector('meta[name="officer-station-longitude"]');
+        const locationUnavailable = document.querySelector('meta[name="station-location-unavailable"]');
+
+        let officerStationId = stationIdMeta ? parseInt(stationIdMeta.content) : null;
+        let stationLat = 9.9312;
+        let stationLng = 76.2673;
+
+        if (latMeta && lngMeta) {
+            stationLat = parseFloat(latMeta.content);
+            stationLng = parseFloat(lngMeta.content);
+        }
+
+        const mapElement = document.getElementById('map');
+        if (mapElement) {
+            const map = L.map('map').setView([stationLat, stationLng], 13);
+            setTimeout(() => { map.invalidateSize(); }, 200);
+
+            const osmStandard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+            const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 19,
+                attribution: 'Tiles &copy; Esri'
+            });
+            const openTopoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                maxZoom: 17,
+                attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: OpenTopoMap'
+            });
+            const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap &copy; CARTO'
+            });
+
+            osmStandard.addTo(map);
+
+            // Overlay Layer Groups
+            const stationBoundaryGroup = L.layerGroup().addTo(map);
+            const cameraLayerGroup = L.layerGroup().addTo(map);
+            const animalAlertLayerGroup = L.layerGroup().addTo(map);
+            const dangerousAreaGroup = L.layerGroup().addTo(map);
+
+            const baseMaps = {
+                "🗺️ Standard": osmStandard,
+                "🛰️ Satellite": esriSatellite,
+                "🏔️ Topography": openTopoMap,
+                "🌙 Dark": cartoDark
+            };
+
+            const overlayMaps = {
+                "🏰 Station Boundaries": stationBoundaryGroup,
+                "📷 Forest Cameras": cameraLayerGroup,
+                "🚨 Live Animal Alerts": animalAlertLayerGroup,
+                "⚠️ Dangerous Areas": dangerousAreaGroup
+            };
+
+            L.control.layers(baseMaps, overlayMaps, { position: 'topright', collapsed: false }).addTo(map);
+
+            const stationMarker = L.marker([stationLat, stationLng]).addTo(map);
+
+            if (locationUnavailable) {
+                stationMarker.bindPopup("Station location not available. Showing default location.").openPopup();
+            } else {
+                stationMarker.bindPopup("<b>Your Station Location</b>").openPopup();
+            }
+
+            // Helper for Animal Emojis
+            function getAnimalEmoji(name) {
+                if (!name) return '🐾';
+                const n = name.toLowerCase();
+                if (n.includes('tiger')) return '🐅';
+                if (n.includes('elephant')) return '🐘';
+                if (n.includes('leopard') || n.includes('panther')) return '🐆';
+                if (n.includes('bear')) return '🐻';
+                if (n.includes('boar') || n.includes('pig')) return '🐗';
+                if (n.includes('deer') || n.includes('sambar')) return '🦌';
+                if (n.includes('monkey') || n.includes('macaque') || n.includes('langur')) return '🐒';
+                if (n.includes('snake') || n.includes('python') || n.includes('cobra')) return '🐍';
+                if (n.includes('bison') || n.includes('gaur')) return '🦬';
+                return '🐾';
+            }
+
+            // 1. Fetch & Render Forest Station Boundaries (10km Radii)
+            fetch('/api/forest-stations/')
+                .then(r => r.json())
+                .then(data => {
+                    const stations = Array.isArray(data) ? data : (data.results || []);
+                    stations.forEach(st => {
+                        if (st.latitude && st.longitude) {
+                            const isOfficerStation = (officerStationId && parseInt(st.id) === officerStationId);
+                            const circle = L.circle([st.latitude, st.longitude], {
+                                radius: 10000, // 10 km radius (in meters)
+                                color: isOfficerStation ? '#007bff' : '#ff02ff',
+                                weight: isOfficerStation ? 2.5 : 1.5,
+                                opacity: 0.7,
+                                fillColor: isOfficerStation ? '#007bff' : '#ff02ff',
+                                fillOpacity: isOfficerStation ? 0.15 : 0.08
+                            });
+
+                            const popupText = isOfficerStation
+                                ? `<b>${st.name}</b><br><span style="color: #007bff; font-weight: bold;">Your Station Boundary (10km Radius)</span>`
+                                : `<b>${st.name}</b><br>Station ID: ${st.id} (10km Radius)`;
+
+                            circle.bindPopup(popupText);
+                            stationBoundaryGroup.addLayer(circle);
+                        }
+                    });
+                })
+                .catch(err => console.error('Error loading station boundaries on officer home:', err));
+
+            // 2. Fetch & Render Forest Cameras
+            fetch('/api/map-cameras/')
+                .then(r => r.json())
+                .then(cameras => {
+                    cameras.forEach(cam => {
+                        if (cam.latitude && cam.longitude) {
+                            const cameraIcon = L.divIcon({
+                                className: 'custom-camera-marker-icon',
+                                html: `<div style="background: #1e40af; color: white; padding: 4px 8px; border-radius: 16px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 6px rgba(0,0,0,0.3); border: 2px solid #ffffff; display: inline-flex; align-items: center; gap: 4px;">📷 Cam #${cam.camera_id}</div>`,
+                                iconSize: [85, 26],
+                                iconAnchor: [42, 13]
+                            });
+
+                            const marker = L.marker([cam.latitude, cam.longitude], { icon: cameraIcon });
+                            marker.bindPopup(`
+                                    <div style="font-family: Arial, sans-serif; padding: 4px; min-width: 160px;">
+                                        <h4 style="margin: 0 0 6px 0; color: #1e40af;">📷 Camera #${cam.camera_id}</h4>
+                                        <p style="margin: 3px 0; font-size: 0.9em;"><b>Station:</b> ${cam.station_name || 'Unassigned'}</p>
+                                        <p style="margin: 3px 0; font-size: 0.85em; color: #64748b;">Lat: ${cam.latitude.toFixed(4)}, Lng: ${cam.longitude.toFixed(4)}</p>
+                                    </div>
+                                `);
+                            cameraLayerGroup.addLayer(marker);
+                        }
+                    });
+                })
+                .catch(err => console.error('Error loading cameras on officer home:', err));
+
+            // 3. Fetch & Render Live Animal Alerts
+            fetch('/api/map-animal-alerts/')
+                .then(r => r.json())
+                .then(alerts => {
+                    alerts.forEach(alert => {
+                        if (alert.latitude && alert.longitude) {
+                            const emoji = getAnimalEmoji(alert.animal_name);
+                            const alertIcon = L.divIcon({
+                                className: 'custom-alert-marker-icon',
+                                html: `<div style="background: #dc2626; color: white; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid #ffffff; display: inline-flex; align-items: center; gap: 4px;">${emoji} ${alert.animal_name}</div>`,
+                                iconSize: [110, 30],
+                                iconAnchor: [55, 15]
+                            });
+
+                            const marker = L.marker([alert.latitude, alert.longitude], { icon: alertIcon });
+                            const imgHtml = alert.image_url
+                                ? `<img src="${alert.image_url}" style="width: 100%; max-height: 130px; object-fit: cover; border-radius: 6px; margin-top: 6px; border: 1px solid #cbd5e1;" alt="${alert.animal_name}"/>`
+                                : '';
+
+                            marker.bindPopup(`
+                                    <div style="font-family: Arial, sans-serif; min-width: 190px; padding: 2px;">
+                                        <h4 style="margin: 0 0 4px 0; color: #dc2626; display: flex; align-items: center; gap: 6px;">
+                                            ${emoji} ${alert.animal_name} Detected
+                                        </h4>
+                                        <p style="margin: 2px 0; font-size: 0.88em;"><b>Camera:</b> #${alert.camera_number} (${alert.station_name})</p>
+                                        <p style="margin: 2px 0; font-size: 0.82em; color: #64748b;"><b>Time:</b> ${alert.date || ''} ${alert.time || ''}</p>
+                                        ${imgHtml}
+                                    </div>
+                                `);
+                            animalAlertLayerGroup.addLayer(marker);
+                        }
+                    });
+                })
+                .catch(err => console.error('Error loading animal alerts on officer home:', err));
+
+            // 4. Fetch & Render Dangerous Area Polygons
+            fetch('/api/dangerous-areas/')
+                .then(r => r.json())
+                .then(data => {
+                    const features = data.results || data;
+                    if (Array.isArray(features)) {
+                        features.forEach(feat => {
+                            if (feat.geojson_data) {
+                                const polyLayer = L.geoJSON(feat.geojson_data, {
+                                    style: {
+                                        color: '#FF0000',
+                                        weight: 3,
+                                        opacity: 0.7,
+                                        fillColor: '#FF0000',
+                                        fillOpacity: 0.25
+                                    }
+                                });
+                                polyLayer.bindPopup(`<b>Dangerous Area</b><br>Station: ${feat.station_name || 'N/A'}`);
+                                dangerousAreaGroup.addLayer(polyLayer);
+                            }
+                        });
+                    }
+                })
+                .catch(err => console.error('Error loading dangerous areas on officer home:', err));
+
+            // 5. Fullscreen Map Handler
+            const fullscreenBtn = document.getElementById('toggle-fullscreen-map-btn');
+            const mapContainer = document.getElementById('dashboard-station-map-container');
+            const fullscreenIcon = document.getElementById('fullscreen-icon');
+
+            if (fullscreenBtn && mapContainer) {
+                fullscreenBtn.addEventListener('click', function () {
+                    mapContainer.classList.toggle('map-fullscreen');
+                    const isFullscreen = mapContainer.classList.contains('map-fullscreen');
+                    if (fullscreenIcon) {
+                        fullscreenIcon.className = isFullscreen ? 'bi bi-fullscreen-exit' : 'bi bi-arrows-fullscreen';
+                    }
+                    setTimeout(() => {
+                        map.invalidateSize();
+                    }, 150);
+                });
+
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && mapContainer.classList.contains('map-fullscreen')) {
+                        mapContainer.classList.remove('map-fullscreen');
+                        if (fullscreenIcon) {
+                            fullscreenIcon.className = 'bi bi-arrows-fullscreen';
+                        }
+                        setTimeout(() => {
+                            map.invalidateSize();
+                        }, 150);
+                    }
+                });
+            }
+        } else {
+            console.warn("Map element with ID 'map' not found on this page.");
+        }
+    });
+</script>
+{% endblock extra_scripts %}
+
+
+{% block content %}
+<!-- Summary Statistics Row -->
+<div class="row mb-4 g-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-success h-100 dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">Active Cameras</h5>
+                        <span class="fs-1 fw-bold" id="active-cameras-count">{{ active_camera_count }}</span>
+                    </div>
+                    <i class="bi bi-camera-video-fill fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <a href="{% url 'forest_officer_view_camera' %}" class="card-footer text-white text-decoration-none">View
+                Details <i class="bi bi-arrow-right-circle"></i></a>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-danger h-100 dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">Recent Alerts (24h)</h5>
+                        <span class="fs-1 fw-bold" id="recent-alerts-count">{{ recent_alerts_count }}</span>
+                    </div>
+                    <i class="bi bi-exclamation-triangle-fill fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <a href="{% url 'forest_officer_view_camera_alerts' %}"
+                class="card-footer text-white text-decoration-none">View Alerts <i
+                    class="bi bi-arrow-right-circle"></i></a>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card text-white bg-primary h-100 dashboard-card"> {# User Reports Card - Already good #}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">User Reports</h5>
+                        <span class="fs-1 fw-bold" id="user-reports-count">{{ user_reports_new_count|default:0 }}</span>
+                    </div>
+                    <i class="bi bi-person-check-fill fs-1 opacity-50"></i>
+                </div>
+            </div>
+            <a href="{% url 'forest_officer_view_user_report' %}"
+                class="card-footer text-white text-decoration-none">Verify Reports <i
+                    class="bi bi-arrow-right-circle"></i></a>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        {# MODIFIED CARD: Was System Status, now New User Complaints #}
+        <div class="card text-white bg-info h-100 dashboard-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">New Complaints</h5> {# Changed title #}
+                        <span class="fs-1 fw-bold" id="new-complaints-count">{{ new_complaints_count|default:0 }}</span>
+                        {# Changed variable and ID #}
+                    </div>
+                    <i class="bi bi-chat-left-dots-fill fs-1 opacity-50"></i> {# Changed icon #}
+                </div>
+            </div>
+            <a href="{% url 'forest_officer_view_user_complaints' %}"
+                class="card-footer text-white text-decoration-none">View Complaints <i
+                    class="bi bi-arrow-right-circle"></i></a> {# Changed link text and URL #}
+        </div>
+    </div>
+</div>
+
+<!-- Charts & Simplified Map Row -->
+<div class="row mb-4 g-4">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-bar-chart-line-fill me-1"></i>
+                Alerts Trend (Last 7 Days)
+            </div>
+            <div class="card-body">
+                <canvas id="alertsChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100" id="dashboard-station-map-container">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-geo-alt-fill me-1"></i>
+                    Station Location
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2" id="toggle-fullscreen-map-btn" title="Toggle Fullscreen Map">
+                    <i class="bi bi-arrows-fullscreen" id="fullscreen-icon"></i>
+                </button>
+            </div>
+            <div class="card-body p-0 d-flex flex-column">
+                <div id="map" class="flex-grow-1"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Alerts Feed Row -->
+<!-- <div class="row">
+        <div class="col-12">
+            <div class="card">
+                 <div class="card-header">
+                     <i class="bi bi-list-ul me-1"></i>
+                    Recent Critical Events
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush" id="recent-events-list">
+                        {% for event in recent_critical_events %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-{{ event.priority_color|default:'secondary' }} me-2">{{ event.priority_label|default:"Info" }}</span>
+                                {{ event.description }}
+                            </div>
+                            <small class="text-muted">{{ event.timestamp|timesince }} ago</small>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">No recent critical events.</li>
+                        {% endfor %}
+                        {% if not recent_critical_events %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div><span class="badge bg-danger me-2">High</span> Elephant detected near Zone A.</div>
+                            <small class="text-muted">5 mins ago</small>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                 <div class="card-footer text-center">
+                    <a href="{% url 'forest_officer_view_camera_alerts' %}" class="btn btn-sm btn-outline-primary">View All Alerts</a>
+                </div>
+            </div>
+        </div>
+    </div> -->
+{% endblock content %}

@@ -1,0 +1,415 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - IT Support Requests{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Consistent styles with previous pages */
+    #page-content-wrapper {
+        padding: 25px 30px;
+        background-color: #f4f7f6;
+    }
+
+    #top-bar h1 {
+        font-size: 2em;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .page-header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #dde2e7;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .page-header-actions .title-info h2 {
+        margin: 0;
+        font-size: 1.6em;
+        font-weight: 600;
+        color: #34495e;
+    }
+    .page-header-actions .title-info .item-count {
+        font-size: 0.9em;
+        color: #7f8c8d;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .actions-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        background-color: #fff;
+        border-radius: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 4px;
+        min-width: 300px;
+    }
+    .search-box input[type="text"], .search-box select {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 20px 0 0 20px;
+        font-size: 1em;
+        flex-grow: 1;
+        outline: none;
+        color: #333;
+        background-color: transparent;
+    }
+    .search-box input[type="text"]::placeholder { color: #95a5a6; }
+    .search-box button[type="submit"] {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 0 20px 20px 0;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+    .search-box button[type="submit"] i { margin-right: 8px; }
+    .search-box button[type="submit"]:hover { background-color: #0056b3; }
+
+
+    .data-table-container {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07);
+        overflow: hidden;
+    }
+
+    .responsive-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .responsive-table thead th {
+        background-color: #e9edf2;
+        color: #34495e;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 18px 10px;
+        text-align: center;
+        border-bottom: 2px solid #d1d8e0;
+        white-space: nowrap;
+    }
+    .responsive-table tbody tr {
+        border-bottom: 1px solid #ecf0f1;
+        transition: background-color 0.2s ease-in-out;
+    }
+    .responsive-table tbody tr:last-child { border-bottom: none; }
+    .responsive-table tbody tr:hover { background-color: #f8f9fa; }
+    .responsive-table tbody td {
+        padding: 14px 10px;
+        color: #555;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 0.88em;
+    }
+    .responsive-table tbody td.text-left-align { text-align: left; }
+    
+    /* MODIFIED: Officer cell styling to accommodate more info */
+    .responsive-table tbody td.officer-details-cell {
+        text-align: left;
+        line-height: 1.4; /* Adjust line height for stacked info */
+    }
+    .officer-details-cell .officer-name {
+        font-weight: 600; /* Make officer name slightly bolder */
+        display: block; /* Ensure it takes its own line if needed */
+        margin-bottom: 3px;
+    }
+    .officer-details-cell .station-info {
+        font-size: 0.9em; /* Smaller font for station info */
+        color: #6c757d; /* Muted color for secondary info */
+        display: block; /* Ensure it takes its own line */
+    }
+
+    .responsive-table tbody td.description-cell {
+        text-align: left;
+        white-space: normal;
+        word-break: break-word;
+        min-width: 150px;
+        max-width: 250px;
+    }
+
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 0.9em;
+        color: white;
+        display: inline-block;
+        min-width: 90px;
+        text-align: center;
+    }
+    .status-pending { background-color: #ffc107; color: #333; }
+    .status-dispatched { background-color: #17a2b8; }
+    .status-resolved { background-color: #28a745; }
+    .status-on_hold { background-color: #6c757d; }
+    .status-cancelled { background-color: #dc3545; }
+
+
+    .action-button {
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 20px;
+        margin: 0 auto;
+        font-size: 0.9em;
+        font-weight: 500;
+        transition: all 0.25s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid transparent;
+        min-width: 120px;
+        justify-content: center;
+    }
+    .action-button i { margin-right: 7px; font-size: 0.95em; }
+    .action-button.update { background-color: #007bff; color: white; border-color: #006fe6;}
+    .action-button.update:hover { background-color: #0056b3; transform: scale(1.05); box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3); }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: #fff;
+    }
+    .empty-state i { font-size: 4em; color: #bdc3c7; margin-bottom: 20px; }
+    .empty-state p { font-size: 1.2em; color: #7f8c8d; margin-bottom: 5px; }
+    .empty-state .search-query-display { font-style: italic; color: #95a5a6; }
+
+    @media (max-width: 1200px) { /* Adjusted breakpoint slightly as one column is removed */
+        .responsive-table thead { display: none; }
+        .responsive-table tr {
+            display: block;
+            margin-bottom: 20px;
+            border: 1px solid #dde2e7;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            background-color: #fff;
+        }
+        .responsive-table td {
+            display: block;
+            text-align: right !important;
+            padding-left: 45% !important; /* Increased padding for labels slightly */
+            position: relative;
+            border-bottom: 1px dashed #ecf0f1;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-size: 0.9em;
+        }
+        .responsive-table td:last-child { border-bottom: none; }
+        .responsive-table td::before {
+            content: attr(data-label);
+            position: absolute;
+            left: 15px;
+            width: calc(45% - 30px); /* Adjusted for new padding */
+            padding-right: 10px;
+            white-space: nowrap;
+            font-weight: 600;
+            text-align: left;
+            color: #34495e;
+            font-size: 0.9em;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        /* MODIFIED: Officer cell in responsive view */
+        .responsive-table td.officer-details-cell {
+             justify-content: flex-start;
+             text-align: left !important;
+             padding: 10px 15px 10px 45%; /* Ensure consistent padding */
+             flex-direction: column; /* Stack officer name and station info vertically */
+             align-items: flex-start; /* Align to the start */
+        }
+         .responsive-table td.officer-details-cell .officer-name,
+         .responsive-table td.officer-details-cell .station-info {
+            display: block; /* Ensure they take full width in the content area */
+            width: 100%;
+         }
+
+
+        .responsive-table td.description-cell, .responsive-table td.resolution-notes-cell {
+             justify-content: flex-start;
+             text-align: left !important;
+             padding: 10px 15px 10px 45%;
+             white-space: normal;
+        }
+        .responsive-table td.actions-cell { text-align: center !important; padding: 15px !important; justify-content: center;}
+        .responsive-table td.actions-cell::before { display: none; }
+    }
+    @media (max-width: 768px) {
+        #top-bar h1 { font-size: 1.6em; }
+        .page-header-actions .title-info h2 { font-size: 1.3em; }
+        .actions-toolbar { justify-content: center; }
+        .search-box { min-width: unset; width: 100%; margin-top: 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="page-header-actions">
+        <div class="title-info">
+            <h2>Manage IT Support Requests</h2>
+            <span class="item-count">
+                {% if requests %}
+                    {{ requests|length }} Request{{ requests|length|pluralize }}
+                {% else %}
+                    0 Requests
+                {% endif %}
+            </span>
+        </div>
+        <div class="actions-toolbar">
+             <form id="filterForm" name="filterForm" method="get" action="" class="search-box">
+                <input type="text" name="search_officer" placeholder="Search Officer/Station..." value="{{ request.GET.search_officer|default_if_none:'' }}" aria-label="Search by Officer or Station" />
+                <select name="status_filter" aria-label="Filter by Status">
+                    <option value="">All Statuses</option>
+                    <option value="pending" {% if request.GET.status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="dispatched" {% if request.GET.status_filter == 'dispatched' %}selected{% endif %}>Tech Support Person Dispatched</option>
+                    <option value="resolved" {% if request.GET.status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+                <button type="submit" value="Filter">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if requests %}
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>Officer / Station</th> {# MODIFIED HEADER #}
+                        <th>Issue Type</th>
+                        <th>Description</th>
+                        <th>Requested</th>
+                        <th>Status</th>
+                        <th>Resolution Notes</th>
+                        <th>Resolved On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        {# MODIFIED CELL to include Officer, Station, and Phone #}
+                        <td data-label="Officer / Station" class="officer-details-cell">
+                            <span class="officer-name">{{ req.OFFICER.first_name }} {{ req.OFFICER.last_name }}</span>
+                            <span class="station-info">
+                                {{ req.OFFICER.STATION.name }}
+                                (Ph: {{ req.OFFICER.STATION.phone|default:'N/A' }})
+                            </span>
+                        </td>
+                        <td data-label="Issue Type">{{ req.get_issue_type_display }}</td>
+                        <td data-label="Description" class="description-cell" title="{{ req.description }}">{{ req.description|truncatewords_html:20 }}</td>
+                        <td data-label="Requested">{{ req.request_date|date:"d M Y, H:i" }}</td>
+                        <td data-label="Status">
+                            <span class="status-badge status-{{ req.status|lower }}">
+                                {{ req.get_status_display }}
+                            </span>
+                        </td>
+                        <td data-label="Resolution Notes" class="resolution-notes-cell">
+                            {% if req.resolution_notes %}
+                                {{ req.resolution_notes|truncatewords_html:15 }}
+                            {% else %}
+                                <span style="color: #999;">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Resolved On">
+                            {% if req.resolved_date %}
+                                {{ req.resolved_date|date:"d M Y, H:i" }}
+                            {% else %}
+                               <span style="color: #999;">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Actions" class="actions-cell">
+                            <a href="{% url 'admin_update_tech_support_status' req.id %}" class="action-button update">
+                                <i class="fas fa-edit"></i> Update
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-tools"></i>
+                 {% if request.GET.search_officer or request.GET.status_filter %}
+                    <p>No Tech Support Requests Found</p>
+                    <span class="search-query-display">Your filter criteria did not match any requests.</span>
+                {% else %}
+                    <p>No Tech Support Requests Logged Yet</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler
+    const currentPath = window.location.pathname;
+    const techSupportBaseLink = document.querySelector('#sidebar ul li a[href="{% url 'admin_view_tech_support_requests' %}"]');
+
+    if (techSupportBaseLink && (currentPath === '{% url "admin_view_tech_support_requests" %}' || currentPath.startsWith('/admin/tech-support/update/'))) { // Adjust update path prefix
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        techSupportBaseLink.closest('li').classList.add('active-link');
+    }
+
+    const tableRows = document.querySelectorAll('.responsive-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = 0;
+    });
+
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) { // Check if form exists before querying inside it
+        const statusSelect = filterForm.querySelector('select[name="status_filter"]');
+        if (statusSelect) { // Check if select exists
+            const currentStatusFilter = new URLSearchParams(window.location.search).get('status_filter');
+            if (currentStatusFilter) {
+                statusSelect.value = currentStatusFilter;
+            }
+        }
+    }
+});
+
+if (!document.getElementById('fadeInUpKeyframes')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "fadeInUpKeyframes";
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }`;
+    document.head.appendChild(styleSheet);
+}
+</script>
+{% endblock %}

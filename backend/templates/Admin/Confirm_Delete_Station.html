@@ -1,0 +1,97 @@
+{% extends 'Admin/admin_base.html' %}
+
+{% block title %}Confirm Deletion - {{ station.name }}{% endblock %}
+
+{% block head_extra %}
+    {# This page uses Bootstrap components (card, alert, buttons) that are not in the base CSS. #}
+    {# We add the Bootstrap CSS link here to make them render correctly. #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+    <style>
+        /* Small style adjustments to better integrate Bootstrap with the base template */
+        #main-content .card {
+            border: none; /* Remove default border to rely on shadow */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        #main-content .btn-secondary {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        #main-content .btn-secondary:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+        #main-content .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+         #main-content .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+    <!-- Top Bar for Page Title and Hamburger Menu -->
+    <div id="top-bar">
+        <h1>Confirm Deletion</h1>
+        <button id="hamburger"><i class="fas fa-bars"></i></button>
+    </div>
+
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0">Delete Forest Station</h3>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Are you sure you want to delete the station named:</h5>
+                <h2 class="text-center my-3 text-danger">"{{ station.name }}" ({{ station.place }})</h2>
+                
+                <div class="alert alert-warning mt-4" role="alert">
+                    <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Warning!</h4>
+                    <p>
+                        This action is permanent and cannot be undone. Deleting this station will not delete the assigned officer(s),
+                        but they will become <strong>unassigned</strong>.
+                    </p>
+                    <hr>
+                    <p class="mb-0">
+                        You will need to re-assign any affected officers to a new station later.
+                    </p>
+                </div>
+
+                {% if assigned_officers %}
+                    <h5 class="mt-4">The following officer(s) will be unassigned:</h5>
+                    <ul class="list-group mb-4">
+                        {% for officer in assigned_officers %}
+                            <li class="list-group-item">
+                                <i class="fas fa-user-shield text-muted me-2"></i> 
+                                <strong>{{ officer.first_name }} {{ officer.last_name }}</strong> 
+                                (Username: {{ officer.LOGIN.username }})
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted fst-italic mb-4">No officers are currently assigned to this station.</p>
+                {% endif %}
+
+                <!-- The form that will actually perform the POST request for deletion -->
+                <form method="post" action="">
+                    {% csrf_token %}
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <!-- The "Cancel" button is just a link back to the list -->
+                        <a href="{% url 'admin_view_forest_station' %}" class="btn btn-secondary me-2">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </a>
+                        
+                        <!-- The "Confirm" button submits the form -->
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i> Yes, Delete Station
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

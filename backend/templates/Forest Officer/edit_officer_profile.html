@@ -1,0 +1,514 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Edit Profile - {{ officer.first_name|default:"Officer" }}{% endblock title %}
+
+{% block page_title %}Edit Your Profile{% endblock page_title %}
+
+{% block extra_head %}
+    <style>
+        /* Card Styling */
+        .edit-profile-page-card {
+            border: none;
+            border-radius: 0.75rem; /* Softer corners */
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); /* Enhanced shadow */
+        }
+
+        .edit-profile-card-header {
+            background: linear-gradient(135deg, #198754 0%, #20c997 100%); /* Green gradient */
+            color: white;
+            padding: 1.5rem;
+            border-bottom: none; /* Remove border if using gradient */
+            position: relative; /* For z-index context */
+            z-index: 1; /* Lower z-index than the image */
+            border-top-left-radius: 0.75rem; /* Match card's border-radius */
+            border-top-right-radius: 0.75rem; /* Match card's border-radius */
+        }
+        .edit-profile-card-header h4 {
+            font-weight: 600;
+            margin-bottom: 0; /* Remove default margin from h4 */
+        }
+
+        /* Image Overlap Section */
+        .profile-image-overlap-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -20px; /* Pulls the image section up. Adjust this value (approx. half image height + border) */
+            position: relative; /* Crucial for z-index */
+            z-index: 5;         /* Higher z-index than the header */
+            margin-bottom: 0rem; /* Space below the image section before form fields start */
+        }
+
+        .profile-image-edit-preview-wrapper { /* Wrapper for the img/placeholder div itself */
+            position: relative;
+            width: 130px;
+            height: 130px;
+        }
+        .profile-image-edit-preview,
+        .profile-image-edit-preview-placeholder {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 5px solid #ffffff; /* Thick white border for separation */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25); /* Shadow for the image */
+            background-color: #fff; /* BG for potentially transparent images */
+            border-radius: 50%; /* Ensure it's circular */
+        }
+        .profile-image-edit-preview-placeholder {
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+        .profile-image-edit-preview-placeholder svg{
+            width: 4rem;
+            height: 4rem;
+        }
+
+        .image-upload-label {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            color: #495057;
+            font-weight: 500;
+        }
+        .form-control-file-sm { /* Custom class for smaller file input */
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            max-width: 280px;
+            margin: 0.25rem auto 0 auto; /* Top margin, then auto for left/right centering */
+        }
+
+        /* Form Elements Styling */
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 0.3rem;
+        }
+        .form-control {
+            border-radius: 0.375rem;
+            border: 1px solid #ced4da;
+            padding: 0.75rem 1rem; /* Comfortable padding */
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: #28a745; /* Green focus */
+            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.2); /* Softer focus shadow */
+        }
+        .address-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* Validation Feedback */
+        .validation-message {
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+            width: 100%; /* Ensure it takes full width of parent */
+        }
+        .valid-feedback {
+            color: #198754;
+        }
+        .invalid-feedback {
+            color: #dc3545;
+            display: block; /* Make sure it's visible */
+        }
+        input.is-invalid, textarea.is-invalid {
+            border-color: #dc3545;
+        }
+        input.is-valid, textarea.is-valid {
+            border-color: #198754;
+        }
+
+
+        /* Sectioning and Buttons */
+        .form-section-title {
+            margin-bottom: 1rem; /* Space below section title */
+            margin-top: 2rem; /* Space above section title, after image or previous section */
+            color: #198754; /* Green for section titles */
+            font-weight: 600;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .form-section-title:first-of-type { /* No top margin for the very first section title after image */
+            margin-top: 0;
+        }
+
+        .form-actions-bar {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e9ecef; /* Separator line */
+        }
+        .btn-save-profile {
+            background-color: #198754;
+            border-color: #198754;
+            padding: 0.65rem 1.5rem;
+            font-weight: 500;
+        }
+        .btn-save-profile:hover {
+            background-color: #157347;
+            border-color: #146c43;
+        }
+        .btn-cancel-edit {
+            padding: 0.65rem 1.5rem;
+            font-weight: 500;
+        }
+    </style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="row justify-content-center py-md-3">
+    <div class="col-xl-7 col-lg-9">
+        <div class="card edit-profile-page-card">
+            <div class="card-header edit-profile-card-header text-center">
+                <h4>Update Profile Information</h4>
+            </div>
+
+            <form method="POST" action="{% url 'edit_officer_profile' %}" enctype="multipart/form-data" id="editProfileForm" novalidate>
+                {% csrf_token %}
+
+                <div class="profile-image-overlap-container">
+                    <div class="profile-image-edit-preview-wrapper">
+                        {% if officer.image and officer.image.url %}
+                            <img src="{{ officer.image.url }}" alt="Current Profile Picture" id="imagePreview" class="profile-image-edit-preview">
+                        {% else %}
+                            <div id="imagePreviewPlaceholder" class="profile-image-edit-preview-placeholder">
+                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            </div>
+                            <img src="#" alt="New Profile Picture" id="imagePreview" class="profile-image-edit-preview d-none">
+                        {% endif %}
+                    </div>
+                    <label for="id_image" class="form-label image-upload-label">Change Profile Picture</label>
+                    <input type="file" class="form-control form-control-file-sm" id="id_image" name="image" accept="image/*">
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    <div id="generalFormErrorPlaceholder"></div>
+
+
+                    <h5 class="form-section-title">Personal Information</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="id_first_name" name="first_name" value="{{ officer.first_name|default:'' }}" required>
+                            <div id="id_first_name_feedback" class="validation-message"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="id_last_name" name="last_name" value="{{ officer.last_name|default:'' }}" required>
+                            <div id="id_last_name_feedback" class="validation-message"></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_dob" class="form-label">Date of Birth</label>
+                        <input type="date" class="form-control" id="id_dob" name="dob" value="{{ officer.dob|date:'Y-m-d'|default:'' }}">
+                        <div id="id_dob_feedback" class="validation-message"></div>
+                        <small class="form-text text-muted">Age must be between 18 and 60.</small>
+                    </div>
+
+                     <div class="mb-4">
+                        <label for="id_address" class="form-label">Address</label>
+                        <textarea class="form-control address-textarea" id="id_address" name="address" rows="3">{{ officer.address|default:'' }}</textarea>
+                    </div>
+
+                    <h5 class="form-section-title">Account Information</h5>
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="id_username" name="username" value="{{ officer.LOGIN.username|default:'' }}" required>
+                        <div id="id_username_feedback" class="validation-message"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="id_email" name="email" value="{{ officer.email|default:'' }}" required>
+                            <div id="id_email_feedback" class="validation-message"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="id_phone" name="phone" value="{{ officer.phone|default:'' }}" required pattern="[0-9]{10}" maxlength="10">
+                            <div id="id_phone_feedback" class="validation-message"></div>
+                            <small class="form-text text-muted">Enter exactly 10 digits.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-bar text-center text-md-end">
+                        <a href="{% url 'view_officer_profile' %}" class="btn btn-outline-secondary btn-cancel-edit mb-2 mb-md-0 me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-success btn-save-profile">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+    {{ block.super }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Image Preview JS (remains the same) ---
+        const imageInput = document.getElementById('id_image');
+        const imagePreview = document.getElementById('imagePreview');
+        const imagePreviewPlaceholder = document.getElementById('imagePreviewPlaceholder');
+
+        if (imageInput && imagePreview) {
+            imageInput.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.classList.remove('d-none');
+                        if(imagePreviewPlaceholder) imagePreviewPlaceholder.classList.add('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    {% if officer.image and officer.image.url %}
+                        imagePreview.src = "{{ officer.image.url|escapejs }}";
+                        imagePreview.classList.remove('d-none');
+                        if(imagePreviewPlaceholder) imagePreviewPlaceholder.classList.add('d-none');
+                    {% else %}
+                        imagePreview.src = "#";
+                        imagePreview.classList.add('d-none');
+                        if(imagePreviewPlaceholder) imagePreviewPlaceholder.classList.remove('d-none');
+                    {% endif %}
+                }
+            });
+        }
+
+        // --- Field Validation JS ---
+        const usernameInput = document.getElementById('id_username');
+        const usernameFeedback = document.getElementById('id_username_feedback'); // Matched ID
+        const emailInput = document.getElementById('id_email');
+        const emailFeedback = document.getElementById('id_email_feedback');     // Matched ID
+        const phoneInput = document.getElementById('id_phone');
+        const phoneFeedback = document.getElementById('id_phone_feedback');     // Matched ID
+        const dobInput = document.getElementById('id_dob');
+        const dobFeedback = document.getElementById('id_dob_feedback');         // Matched ID
+        const firstNameInput = document.getElementById('id_first_name');
+        const firstNameFeedback = document.getElementById('id_first_name_feedback'); // Matched ID
+        const lastNameInput = document.getElementById('id_last_name');
+        const lastNameFeedback = document.getElementById('id_last_name_feedback');   // Matched ID
+        const editProfileForm = document.getElementById('editProfileForm');
+
+        const initialUsername = usernameInput ? usernameInput.value : '';
+        const initialEmail = emailInput ? emailInput.value : '';
+        const initialPhone = phoneInput ? phoneInput.value : '';
+
+        const currentLoginId = "{{ officer.LOGIN.id|escapejs|default:'' }}";
+        const currentOfficerId = "{{ officer.id|escapejs|default:'' }}";
+
+        let debounceTimer;
+
+        function setFeedback(element, message, isValid) {
+            if (!element) return;
+            element.innerHTML = message || ''; // Ensure message is not undefined
+            const inputEl = document.getElementById(element.id.replace('_feedback', ''));
+
+            if (isValid === true) {
+                element.className = 'validation-message valid-feedback';
+                if(inputEl) { inputEl.classList.add('is-valid'); inputEl.classList.remove('is-invalid'); }
+            } else if (isValid === false) {
+                element.className = 'validation-message invalid-feedback';
+                if(inputEl) { inputEl.classList.add('is-invalid'); inputEl.classList.remove('is-valid'); }
+            } else {
+                element.className = 'validation-message text-muted';
+                if(inputEl) { inputEl.classList.remove('is-valid', 'is-invalid'); }
+            }
+        }
+        
+        function checkRequiredField(inputElement, feedbackElement, fieldName) {
+            if (!inputElement || !feedbackElement) return true; // Skip if elements don't exist
+            if (!inputElement.value.trim()) {
+                setFeedback(feedbackElement, `${fieldName} cannot be empty.`, false);
+                return false;
+            }
+            // If it was previously invalid for being empty, but now has value, clear that specific error
+            // but don't mark as valid yet, other validations might apply.
+            else if (feedbackElement.textContent === `${fieldName} cannot be empty.`) {
+                 setFeedback(feedbackElement, '', null); // Clear specific "empty" error
+            }
+            return true;
+        }
+
+        if(firstNameInput && firstNameFeedback) firstNameInput.addEventListener('blur', () => checkRequiredField(firstNameInput, firstNameFeedback, 'First name'));
+        if(lastNameInput && lastNameFeedback) lastNameInput.addEventListener('blur', () => checkRequiredField(lastNameInput, lastNameFeedback, 'Last name'));
+
+        // Username Validation
+        if (usernameInput && usernameFeedback) {
+            usernameInput.addEventListener('input', function() {
+                if (!checkRequiredField(usernameInput, usernameFeedback, 'Username')) return;
+                const username = usernameInput.value.trim();
+                clearTimeout(debounceTimer);
+                if (username === initialUsername) {
+                    setFeedback(usernameFeedback, '', null); return;
+                }
+                if (username.length < 3) {
+                    setFeedback(usernameFeedback, 'Username must be at least 3 characters.', false); return;
+                }
+                setFeedback(usernameFeedback, 'Checking availability...', null);
+                debounceTimer = setTimeout(() => {
+                    fetch(`{% url 'check_username_exists' %}?username=${encodeURIComponent(username)}&login_id=${currentLoginId}`)
+                        .then(response => response.json())
+                        .then(data => { 
+                            if (data.is_taken) {
+                                setFeedback(usernameFeedback, 'Username is already taken.', false);
+                            } else {
+                                setFeedback(usernameFeedback, 'Username is available!', true);
+                            }
+                        })
+                        .catch(() => { setFeedback(usernameFeedback, 'Could not check username. Please try again.', false); });
+                }, 700);
+            });
+             usernameInput.addEventListener('blur', () => checkRequiredField(usernameInput, usernameFeedback, 'Username'));
+        }
+
+        // Email Validation
+        if (emailInput && emailFeedback) {
+            emailInput.addEventListener('input', function() {
+                if (!checkRequiredField(emailInput, emailFeedback, 'Email')) return;
+                const email = emailInput.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+                clearTimeout(debounceTimer);
+                if (email === initialEmail) {
+                    setFeedback(emailFeedback, '', null); return;
+                }
+                if (!emailRegex.test(email)) {
+                    setFeedback(emailFeedback, 'Invalid email format (e.g., user@example.com).', false); return;
+                }
+                setFeedback(emailFeedback, 'Checking email...', null);
+                debounceTimer = setTimeout(() => {
+                    fetch(`{% url 'check_email_exists' %}?email=${encodeURIComponent(email)}&officer_id=${currentOfficerId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.is_taken) {
+                                setFeedback(emailFeedback, 'Email is already registered.', false);
+                            } else {
+                                setFeedback(emailFeedback, 'Email is available.', true);
+                            }
+                        })
+                        .catch(() => { setFeedback(emailFeedback, 'Could not check email. Please try again.', false); });
+                }, 700);
+            });
+            emailInput.addEventListener('blur', () => checkRequiredField(emailInput, emailFeedback, 'Email'));
+        }
+
+        // Phone Validation (Strictly 10 digits)
+        if (phoneInput && phoneFeedback) {
+            phoneInput.addEventListener('input', function() {
+                if (!checkRequiredField(phoneInput, phoneFeedback, 'Phone number')) return;
+                const phone = phoneInput.value.trim();
+                const phoneRegex = /^[0-9]{10}$/;
+                clearTimeout(debounceTimer);
+
+                if (phone.length > 10) phoneInput.value = phone.slice(0, 10);
+                const currentPhoneVal = phoneInput.value; 
+
+                if (currentPhoneVal === initialPhone) {
+                    setFeedback(phoneFeedback, '', null); return;
+                }
+                if (!phoneRegex.test(currentPhoneVal)) {
+                    setFeedback(phoneFeedback, 'Phone number must be exactly 10 digits.', false); return;
+                }
+                setFeedback(phoneFeedback, 'Checking phone number...', null);
+                debounceTimer = setTimeout(() => {
+                    fetch(`{% url 'check_phone_exists' %}?phone=${encodeURIComponent(currentPhoneVal)}&officer_id=${currentOfficerId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.is_taken) {
+                                setFeedback(phoneFeedback, 'Phone number is already registered.', false);
+                            } else {
+                                setFeedback(phoneFeedback, 'Phone number is available.', true);
+                            }
+                        })
+                        .catch(() => { setFeedback(phoneFeedback, 'Could not check phone. Please try again.', false); });
+                }, 700);
+            });
+            phoneInput.addEventListener('blur', () => checkRequiredField(phoneInput, phoneFeedback, 'Phone number'));
+        }
+
+        // DOB Age Client-Side Validation
+        if (dobInput && dobFeedback) {
+            dobInput.addEventListener('change', function() {
+                const dobValue = dobInput.value;
+                if (!dobValue) { setFeedback(dobFeedback, '', null); return; }
+                const dobDate = new Date(dobValue);
+                const today = new Date();
+                dobDate.setHours(0,0,0,0);
+                today.setHours(0,0,0,0);
+
+                if (dobDate > today) {
+                    setFeedback(dobFeedback, 'Date of birth cannot be in the future.', false); return;
+                }
+                let age = today.getFullYear() - dobDate.getFullYear();
+                const m = today.getMonth() - dobDate.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) age--;
+                
+                if (age < 18) {
+                    setFeedback(dobFeedback, 'Officer must be at least 18 years old.', false);
+                } else if (age > 60) {
+                    setFeedback(dobFeedback, 'Officer cannot be older than 60 years.', false);
+                } else {
+                    setFeedback(dobFeedback, 'Age is valid.', true);
+                }
+            });
+        }
+
+        // Form Submission
+        if (editProfileForm) {
+            editProfileForm.addEventListener('submit', function(event) {
+                let isFormValid = true;
+                const requiredInputs = editProfileForm.querySelectorAll('input[required], textarea[required]');
+                
+                requiredInputs.forEach(input => {
+                     const feedbackEl = document.getElementById(input.id + '_feedback');
+                    if (!checkRequiredField(input, feedbackEl, input.labels[0] ? input.labels[0].textContent.replace('*','').trim() : 'This field')) {
+                        isFormValid = false;
+                    }
+                });
+                
+                editProfileForm.querySelectorAll('input.is-invalid, textarea.is-invalid').forEach(() => {
+                    isFormValid = false;
+                });
+                 if (dobInput && dobInput.classList.contains('is-invalid')) {
+                    isFormValid = false;
+                }
+
+                const generalErrorPlaceholder = document.getElementById('generalFormErrorPlaceholder');
+                const existingGeneralError = document.getElementById('generalFormError');
+                if (existingGeneralError) existingGeneralError.remove();
+
+
+                if (!isFormValid) {
+                    event.preventDefault();
+                    const firstInvalid = editProfileForm.querySelector('.is-invalid');
+                    if (firstInvalid) firstInvalid.focus();
+                    
+                    const generalError = document.createElement('div');
+                    generalError.id = 'generalFormError';
+                    generalError.className = 'alert alert-danger mt-3';
+                    generalError.textContent = 'Please correct the errors highlighted in the form.';
+                    
+                    if(generalErrorPlaceholder) generalErrorPlaceholder.appendChild(generalError);
+                    else {
+                        const cardBody = editProfileForm.closest('.card-body');
+                        if(cardBody) cardBody.insertBefore(generalError, editProfileForm.firstChild); // Insert before form within card body
+                        else editProfileForm.insertBefore(generalError, editProfileForm.firstChild);
+                    }
+                }
+            });
+        }
+    });
+    </script>
+{% endblock extra_scripts %}

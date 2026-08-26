@@ -1,0 +1,50 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>Untitled Document</title>
+</head>
+
+<body>
+<form id="form1" name="form1" method="post" action="">
+  <table width="120" border="1">
+    <tr>
+            <td colspan="2"><div align="center"><a href="/admin_add_tips/">Add new </a></div></td>
+    </tr>
+    <tr>
+      <td width="24"><div align="center">Sno</div></td>
+      <td width="37">Tip Name </td>
+      <td width="37">Tip File </td>
+      <td colspan="2"><div align="center">Actions</td>
+
+    </tr>
+
+    {% if tips %}
+        {% for tip in tips %}
+
+        <tr>
+          <td><div align="center">{{ forloop.counter }}</div></td> {# Sno (1-based counter) #}
+          <td><div align="center">{{ tip.tip_name }}</div></td>
+{#          <td><div align="center">{{ tip.tip_file }}</div></td>#}
+          <td>
+            <div align="center">
+                  {# Create a link using the file's .url attribute #}
+                  {# The link text can be the file name (.name) or static text #}
+                  <a href="{{ tip.tip_file.url }}" target="_blank">{{ tip.tip_file.name }}</a>
+               </div>
+          </td>
+          <td><div align="center"><a href="#">edit</a></div></td>
+          <td><div align="center"><a href="#">delete</a></div></td>
+
+        </tr>
+        {% endfor %}
+
+    {% else %}
+         <tr>
+            <td colspan="5"><div align="center">No tips</div></td>
+         </tr>
+    {% endif %}
+  </table>
+</form>
+</body>
+</html>

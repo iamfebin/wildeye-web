@@ -1,0 +1,176 @@
+{% extends "Forest Officer/officer_base.html" %}
+{% load static %}
+
+{% block title %}Request Tech Support - WildEye Officer{% endblock title %}
+
+{% block extra_head %}
+<!-- Custom CSS for Form and Card Styling -->
+<style>
+    .custom-card {
+        border: none;
+        border-radius: 0.8rem;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .form-control, .form-select {
+        border-radius: 0.5rem;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+    }
+
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.2);
+        border-color: #8abfff;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #343a40;
+    }
+    
+    .btn-pill-hover {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+
+    .btn-pill-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 7px 20px rgba(0, 123, 255, 0.3);
+    }
+</style>
+{% endblock extra_head %}
+
+{% block page_title %}Request Technical Support{% endblock page_title %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card custom-card">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="mb-0">Submit a New Support Ticket</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" id="techSupportForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="issue_type" class="form-label">Type of Issue</label>
+                        <select class="form-select" id="issue_type" name="issue_type" required>
+                            <option value="" selected disabled>-- Select an Issue --</option>
+                            <option value="detection_system">Detection System</option>
+                            <option value="camera">Camera Hardware/Feed</option>
+                            <option value="network">Network Connectivity</option>
+                            <option value="account">Account or Website Problem</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label">Description of Issue</label>
+                        <textarea class="form-control" id="description" name="description" rows="6" placeholder="Please describe the problem in as much detail as possible..." required></textarea>
+                        <div class="form-text">
+                            Example: "Camera C-07 at the northern perimeter is offline since 8:00 AM. Checked power, seems okay."
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-2 d-flex justify-content-end gap-2">
+                        <a href="{% url 'forest_officer_view_tech_support_requests' %}" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+                        <button type="submit" class="btn btn-primary rounded-pill btn-pill-hover px-4 py-2">
+                            <i class="bi bi-send-fill me-2"></i>Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+<script>
+    // This script helps clear the form if the user navigates back to it using browser buttons,
+    // preventing submission of stale data. The 'pageshow' event is reliable for this.
+    window.addEventListener('pageshow', function(event) {
+        // 'persisted' is true if the page was loaded from the back-forward cache
+        if (event.persisted) {
+            const form = document.getElementById('techSupportForm');
+            if (form) {
+                form.reset();
+            }
+        }
+    });
+</script>
+{% endblock extra_scripts %}
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Tech Support</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { color: #333; text-align: center; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        select, textarea { width: 100%; padding: 8px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #45a049; }
+        .phone-info { text-align: center; margin-top: 20px; padding: 10px; background-color: #e7f3e7; border-left: 6px solid #4CAF50; }
+        a { display: block; text-align: center; margin-top: 15px; color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Request Tech Support</h1>
+
+        <form method="post">
+            {% csrf_token %}
+            <label for="issue_type">Type of Issue:</label>
+            <select id="issue_type" name="issue_type" required>
+                <option value="">-- Select an Issue --</option>
+                <option value="detection_system">Detection System</option>
+                <option value="camera">Camera</option>
+                <option value="other">Other</option>
+            </select>
+
+            <label for="description">Description of Issue:</label>
+            <textarea id="description" name="description" rows="5" placeholder="Please describe the problem in detail (e.g., 'Camera 3 at sector A is blurry', 'AI detection not recognizing animal movements')." required></textarea>
+
+            <button type="submit">Submit Request</button>
+        </form>
+        <a href="{% url 'forest_officer_view_tech_support_requests' %}">View My Tech Support Requests</a>
+        <a href="{% url 'forest_officer_home' %}">Back to Dashboard</a>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Option 1: Reset the entire form
+        const form = document.querySelector('form'); // Select your form
+        if (form) {
+            form.reset();
+        }
+
+        // Option 2: Clear specific fields (more targeted)
+        // document.getElementById('issue_type').value = '';
+        // document.getElementById('description').value = '';
+    });
+
+    // More robust for back/forward cache: Use pageshow event
+    // This event fires when a page is loaded, including from the BFCache.
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) { // Check if the page was retrieved from BFCache
+            const form = document.querySelector('form');
+            if (form) {
+                form.reset();
+            }
+            // Or refresh the page entirely for a clean state
+            // location.reload();
+        }
+    });
+</script>
+</body>
+</html> -->

@@ -1,0 +1,289 @@
+{% extends 'Forest Officer/officer_base.html' %}
+{% load static %}
+
+{% block title %}Edit User Report{% endblock title %}
+
+{% block page_title %}Edit User Report{% endblock page_title %}
+
+{% block extra_head %}
+    {{ block.super }}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+    <!-- Leaflet Control Geocoder CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <style>
+        #map {
+            height: 350px;
+            width: 100%;
+            border-radius: 0.375rem;
+            border: 1px solid #ced4da;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            position: relative; /* Important for geocoder control positioning */
+        }
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .card-header-icon {
+            margin-right: 0.5rem;
+        }
+        .input-group-text {
+             background-color: #e9ecef;
+        }
+        input[readonly].form-control {
+            background-color: #e9ecef;
+            opacity: 1;
+        }
+        .map-instruction {
+            font-size: 0.875em;
+            color: #6c757d;
+        }
+        /* Style for Leaflet Geocoder */
+        .leaflet-control-geocoder {
+            /* Adjust if needed, but defaults are usually fine */
+        }
+        .leaflet-control-geocoder-icon {
+            /* Style for the search icon */
+        }
+        .leaflet-control-geocoder-form input {
+            /* Style for the search input field if needed */
+            min-width: 200px; /* Example to make search bar wider */
+        }
+    </style>
+{% endblock extra_head %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 d-flex align-items-center">
+                <i class="bi bi-pencil-square card-header-icon"></i>
+                Edit User Submitted Report
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <fieldset class="mb-4">
+                    <legend class="h6 mb-3 text-secondary"><i class="bi bi-card-text me-2"></i>Report Information</legend>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.animal.auto_id }}" class="form-label">
+                                <i class="bi bi-paw me-1"></i>{{ form.animal.label|default:"Animal Name / Species" }}
+                            </label>
+                            {{ form.animal }}
+                            {% if form.animal.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.animal.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.animal_type.auto_id }}" class="form-label">
+                                <i class="bi bi-tags me-1"></i>{{ form.animal_type.label|default:"Animal Type" }}
+                            </label>
+                            {{ form.animal_type }}
+                            {% if form.animal_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.animal_type.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset class="mb-4">
+                    <legend class="h6 mb-3 text-secondary"><i class="bi bi-geo-alt-fill me-2"></i>Location Details</legend>
+                    <p class="map-instruction mb-2">
+                        <i class="bi bi-info-circle me-1"></i>Use the search bar or click on the map to set coordinates. Drag the marker to fine-tune.
+                    </p>
+                    <div id="map"></div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                             <label for="{{ form.latitude.auto_id }}" class="form-label">
+                                <i class="bi bi-bullseye me-1"></i>{{ form.latitude.label|default:"Latitude" }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-arrows-expand"></i></span>
+                                {{ form.latitude }}
+                            </div>
+                            {% if form.latitude.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.latitude.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.longitude.auto_id }}" class="form-label">
+                                <i class="bi bi-bullseye me-1"></i>{{ form.longitude.label|default:"Longitude" }}
+                            </label>
+                             <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-arrows-expand"></i></span>
+                                {{ form.longitude }}
+                            </div>
+                            {% if form.longitude.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.longitude.errors|join:", " }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.location_details.auto_id }}" class="form-label">
+                            <i class="bi bi-justify-left me-1"></i>{{ form.location_details.label|default:"Additional Location Details" }}
+                        </label>
+                        {{ form.location_details }}
+                        {% if form.location_details.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.location_details.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="mb-4">
+                    <legend class="h6 mb-3 text-secondary"><i class="bi bi-check-circle-fill me-2"></i>Verification</legend>
+                    <div class="mb-3">
+                        <label for="{{ form.status.auto_id }}" class="form-label">
+                           <i class="bi bi-toggles2 me-1"></i> {{ form.status.label|default:"Report Status" }}
+                        </label>
+                        {{ form.status }}
+                         {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.status.errors|join:", " }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </fieldset>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-end align-items-center">
+                    <a href="{% url 'forest_officer_view_user_report' %}" class="btn btn-outline-secondary btn-lg me-3">
+                        <i class="bi bi-x-circle me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-check-circle-fill me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_scripts %}
+    {{ block.super }}
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    <!-- Leaflet Control Geocoder JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const latField = document.getElementById('{{ form.latitude.auto_id }}');
+        const lonField = document.getElementById('{{ form.longitude.auto_id }}');
+
+        let defaultViewLat = 9.9312; 
+        let defaultViewLon = 76.2673;
+        let initialZoom = 7;
+
+        let currentLat = parseFloat(latField.value);
+        let currentLon = parseFloat(lonField.value);
+
+        if (!isNaN(currentLat) && !isNaN(currentLon) && latField.value.trim() !== '' && lonField.value.trim() !== '') {
+            defaultViewLat = currentLat;
+            defaultViewLon = currentLon;
+            initialZoom = 13;
+        } else {
+            if (latField) latField.value = '';
+            if (lonField) lonField.value = '';
+        }
+
+        const map = L.map('map').setView([defaultViewLat, defaultViewLon], initialZoom);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        let marker = null;
+
+        function updateMarkerAndFields(lat, lng, shouldPan = true, zoomLevel = null) {
+            const roundedLat = parseFloat(lat.toFixed(6));
+            const roundedLng = parseFloat(lng.toFixed(6));
+
+            if (marker) {
+                marker.setLatLng([roundedLat, roundedLng]);
+            } else {
+                marker = L.marker([roundedLat, roundedLng], { draggable: true }).addTo(map);
+                marker.on('dragend', function(event) {
+                    const newLatLng = event.target.getLatLng();
+                    updateMarkerAndFields(newLatLng.lat, newLatLng.lng, false);
+                });
+            }
+            if (shouldPan) {
+                if (zoomLevel) {
+                    map.setView([roundedLat, roundedLng], zoomLevel);
+                } else {
+                    map.panTo([roundedLat, roundedLng]);
+                }
+            }
+            if (latField) latField.value = roundedLat;
+            if (lonField) lonField.value = roundedLng;
+            
+            if (latField) latField.dispatchEvent(new Event('change'));
+            if (lonField) lonField.dispatchEvent(new Event('change'));
+        }
+
+        if (!isNaN(currentLat) && !isNaN(currentLon) && latField.value.trim() !== '' && lonField.value.trim() !== '') {
+            updateMarkerAndFields(currentLat, currentLon, false);
+        }
+
+        map.on('click', function(e) {
+            updateMarkerAndFields(e.latlng.lat, e.latlng.lng);
+        });
+
+        // Add Geocoder control
+        const geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false, // We'll handle the marker ourselves
+            placeholder: 'Search for a location...',
+            errorMessage: 'Nothing found.',
+            geocoder: L.Control.Geocoder.nominatim() // Using Nominatim
+        }).on('markgeocode', function(e) {
+            const latlng = e.geocode.center;
+            // Update marker and fields, pan and zoom to the location
+            updateMarkerAndFields(latlng.lat, latlng.lng, true, map.getMaxZoom() > 15 ? 15 : map.getZoom());
+            map.setView(latlng, map.getMaxZoom() > 15 ? 15 : map.getZoom()); // Center map on search result
+        }).addTo(map);
+        
+        // --- Map Invalidation (same as before) ---
+        if (typeof(MutationObserver) === "function") {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === "attributes" && mutation.attributeName === "style" && map.getContainer().offsetParent) {
+                         map.invalidateSize();
+                         observer.disconnect();
+                    } else if (map.getContainer().offsetParent) {
+                         map.invalidateSize();
+                    }
+                });
+            });
+            if (map.getContainer()) {
+                observer.observe(map.getContainer().parentElement, { attributes: true, childList: true, subtree: true });
+            }
+        } else {
+             setTimeout(function() { map.invalidateSize(); }, 200);
+        }
+    });
+    </script>
+{% endblock extra_scripts %}

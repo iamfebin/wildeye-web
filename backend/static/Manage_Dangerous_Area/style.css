@@ -1,0 +1,18 @@
+/* Basic styling for the map container */
+#map {
+    height: 100vh; /* Make the map fill the entire viewport height */
+    width: 100%; /* Make the map fill the entire viewport width */
+    margin: 0;
+    padding: 0;
+}
+
+/* Style for the clear button */
+#clear-areas {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 1000; /* Ensure button is above the map */
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+}

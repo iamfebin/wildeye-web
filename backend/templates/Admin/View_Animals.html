@@ -1,0 +1,209 @@
+{% extends "Admin/admin_base.html" %}
+{% load static %}
+
+{% block title %}Admin - Animal Database{% endblock %}
+
+{% block styles %}
+{{ block.super }}
+<style>
+    /* Consistent styles */
+    #page-content-wrapper { padding: 25px 30px; background-color: #f4f7f6; }
+    #top-bar h1 { font-size: 2em; font-weight: 700; color: #2c3e50; }
+
+    .page-header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #dde2e7; flex-wrap: wrap; gap: 15px; }
+    .page-header-actions .title-info h2 { margin: 0; font-size: 1.6em; font-weight: 600; color: #34495e; }
+    .page-header-actions .title-info .item-count { font-size: 0.9em; color: #7f8c8d; margin-top: 4px; display: block; }
+
+    .actions-toolbar { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+
+    .btn-primary-action { background-image: linear-gradient(to right, #007bff 0%, #0056b3 100%); color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: 600; display: inline-flex; align-items: center; transition: all 0.3s ease; border: none; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2); }
+    .btn-primary-action i { margin-right: 10px; font-size: 1.1em; }
+    .btn-primary-action:hover, .btn-primary-action:focus { background-image: linear-gradient(to right, #0056b3 0%, #003f80 100%); box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3); transform: translateY(-2px); color: white; }
+
+    .search-box { display: flex; align-items: center; background-color: #fff; border-radius: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 4px; min-width: 300px; }
+    .search-box input[type="text"] { padding: 10px 20px; border: none; border-radius: 20px 0 0 20px; font-size: 1em; flex-grow: 1; outline: none; color: #333; }
+    .search-box input[type="text"]::placeholder { color: #95a5a6; }
+    .search-box button[type="submit"] { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 0 20px 20px 0; cursor: pointer; font-weight: 500; transition: background-color 0.3s ease; display: inline-flex; align-items: center; }
+    .search-box button[type="submit"] i { margin-right: 8px; }
+    .search-box button[type="submit"]:hover { background-color: #218838; }
+
+    .data-table-container { background-color: #ffffff; border-radius: 12px; box-shadow: 0 5px 20px rgba(0, 0, 0, 0.07); overflow: hidden; }
+    .responsive-table { width: 100%; border-collapse: collapse; }
+    .responsive-table thead th { background-color: #e9edf2; color: #34495e; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 18px 15px; text-align: center; border-bottom: 2px solid #d1d8e0; white-space: nowrap; }
+    .responsive-table tbody tr { border-bottom: 1px solid #ecf0f1; transition: background-color 0.2s ease-in-out; }
+    .responsive-table tbody tr:last-child { border-bottom: none; }
+    .responsive-table tbody tr:hover { background-color: #f8f9fa; }
+    .responsive-table tbody td { padding: 16px 15px; color: #555; text-align: center; vertical-align: middle; font-size: 0.95em; }
+    .responsive-table tbody td.text-left-align { text-align: left; }
+    .responsive-table tbody td.details-cell { text-align: left; white-space: pre-wrap; word-break: break-word; min-width: 200px; }
+
+    .animal-image-thumbnail { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; background-color: #e9ecef; }
+    .no-image-placeholder { width: 60px; height: 60px; border-radius: 8px; background-color: #e9ecef; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 0.8em; }
+
+    .action-button { text-decoration: none; padding: 8px 15px; border-radius: 20px; margin: 0 5px; font-size: 0.85em; font-weight: 500; transition: all 0.25s ease-in-out; display: inline-flex; align-items: center; border: 1px solid transparent; min-width: 90px; justify-content: center; }
+    .action-button i { margin-right: 7px; font-size: 0.95em; }
+    .action-button.edit { background-color: #ffc107; color: #333; border-color: #e0a800; }
+    .action-button.edit:hover { background-color: #e0a800; transform: scale(1.05); box-shadow: 0 2px 8px rgba(224, 168, 0, 0.3); }
+    .action-button.delete { background-color: #dc3545; color: white; border-color: #c82333; }
+    .action-button.delete:hover { background-color: #c82333; transform: scale(1.05); box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3); }
+    .action-button.disabled { background-color: #adb5bd; color: #fff; border-color: #98a0a5; cursor: not-allowed; opacity: 0.7; }
+    .action-button.disabled:hover { transform: none; box-shadow: none; }
+
+
+    .empty-state { text-align: center; padding: 60px 20px; background-color: #fff; }
+    .empty-state i { font-size: 4em; color: #bdc3c7; margin-bottom: 20px; }
+    .empty-state p { font-size: 1.2em; color: #7f8c8d; margin-bottom: 5px; }
+    .empty-state .search-query-display { font-style: italic; color: #95a5a6; }
+
+    @media (max-width: 992px) { /* Adjusted breakpoint */
+        .responsive-table thead { display: none; }
+        .responsive-table tr { display: block; margin-bottom: 20px; border: 1px solid #dde2e7; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); background-color: #fff; }
+        .responsive-table td { display: block; text-align: right !important; padding-left: 45% !important; position: relative; border-bottom: 1px dashed #ecf0f1; min-height: 40px; display: flex; align-items: center; justify-content: flex-end; }
+        .responsive-table td:last-child { border-bottom: none; }
+        .responsive-table td::before { content: attr(data-label); position: absolute; left: 15px; width: calc(45% - 30px); padding-right: 10px; white-space: nowrap; font-weight: 600; text-align: left; color: #34495e; font-size: 0.9em; top: 50%; transform: translateY(-50%); }
+        .responsive-table td.details-cell { justify-content: flex-start; text-align: left !important; padding: 10px 15px 10px 45%; }
+        .responsive-table td.image-cell { justify-content: flex-end; } /* Ensure image aligns to right in stacked view */
+        .responsive-table td.actions-cell { text-align: center !important; padding: 15px !important; justify-content: center;}
+        .responsive-table td.actions-cell::before { display: none; }
+    }
+     @media (max-width: 768px) {
+        #top-bar h1 { font-size: 1.6em; }
+        .page-header-actions .title-info h2 { font-size: 1.3em; }
+        .actions-toolbar { justify-content: center; }
+        .search-box { min-width: unset; width: 100%; margin-top: 10px; }
+        .btn-primary-action { width: 100%; justify-content: center; margin-top: 10px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="top-bar">
+    <h1>Admin Dashboard</h1>
+    <button id="hamburger" aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+</div>
+
+<div id="page-content-wrapper">
+    <div class="page-header-actions">
+        <div class="title-info">
+            <h2>Animal Database Management</h2>
+            <span class="item-count">
+                {% if animals %}
+                    {{ animals|length }} Animal{{ animals|length|pluralize }}
+                {% else %}
+                    0 Animals
+                {% endif %}
+            </span>
+        </div>
+        <div class="actions-toolbar">
+             <form id="searchForm" name="searchForm" method="post" action="" class="search-box">
+                {% csrf_token %}
+                <input type="text" name="textfield" placeholder="Search by Name or Type..." value="{{ search_term|default_if_none:'' }}" aria-label="Search Animals" />
+                <button type="submit" name="Submit" value="Search">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            <a href="{% url 'admin_add_animal' %}" class="btn-primary-action">
+                <i class="fas fa-plus-circle"></i> Add New Animal
+            </a>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        {% if animals %}
+            <table class="responsive-table">
+                <thead>
+                    <tr>
+                        <th>S.No</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Details</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for animal_obj in animals %} {# Renamed to animal_obj to avoid conflict #}
+                    <tr>
+                        <td data-label="S.No">{{ forloop.counter }}</td>
+                        <td data-label="Image" class="image-cell">
+                            {% if animal_obj.image and animal_obj.image.url %}
+                                <img src="{{ animal_obj.image.url }}" alt="{{ animal_obj.name }}" class="animal-image-thumbnail"/>
+                            {% else %}
+                                <div class="no-image-placeholder">No Image</div>
+                            {% endif %}
+                        </td>
+                        <td data-label="Name" class="text-left-align">{{ animal_obj.name }}</td>
+                        <td data-label="Details" class="details-cell" title="{{ animal_obj.details }}">{{ animal_obj.details|truncatewords_html:35 }}</td>
+                        <td data-label="Type">{{ animal_obj.type|default:"N/A" }}</td>
+                        <td data-label="Actions" class="actions-cell">
+                            <a href="{% url 'admin_edit_animal' animal_obj.id %}" class="action-button edit" aria-label="Edit {{ animal_obj.name }}">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            {% if not animal_obj.is_core_animal %}
+                                <a href="{% url 'admin_delete_animal' animal_obj.id %}" class="action-button delete"
+                                   onclick="return confirm('Are you sure you want to delete \'{{ animal_obj.name|escapejs }}\'? This action cannot be undone.');" aria-label="Delete {{ animal_obj.name }}">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </a>
+                            {% else %}
+                                <span class="action-button disabled" title="Core animals cannot be deleted.">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-paw"></i>
+                {% if search_term %}
+                    <p>No Animals Found</p>
+                    <span class="search-query-display">Your search for "{{ search_term|escape }}" did not match any animals.</span>
+                {% else %}
+                    <p>No Animals in Database</p>
+                    <span class="search-query-display">Get started by adding a new animal.</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Active sidebar link handler
+    const currentPath = window.location.pathname;
+    const animalBaseLink = document.querySelector('#sidebar ul li a[href="{% url 'admin_view_animal' %}"]'); // Use Django URL tag
+
+    if (animalBaseLink && (currentPath === '{% url "admin_view_animal" %}' || currentPath.startsWith('/admin_edit_animal/') || currentPath === '{% url "admin_add_animal" %}')) {
+        document.querySelectorAll('#sidebar ul li.active-link').forEach(li => {
+            li.classList.remove('active-link');
+        });
+        animalBaseLink.closest('li').classList.add('active-link');
+    }
+
+    // Table row animation
+    const tableRows = document.querySelectorAll('.responsive-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = 0;
+    });
+});
+
+// Ensure fadeInUp keyframes are defined
+if (!document.getElementById('fadeInUpKeyframes')) {
+    const styleSheet = document.createElement("style");
+    styleSheet.id = "fadeInUpKeyframes";
+    styleSheet.type = "text/css";
+    styleSheet.innerText = `
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }`;
+    document.head.appendChild(styleSheet);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,322 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <title>Dangerous Spots Map</title>
+
+    {# Leaflet CSS #}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+       crossorigin=""/>
+
+    {# Leaflet Draw CSS #}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css"/>
+
+
+    <style>
+        /* Styles for the fading message (Optional - keep if using messages framework) */
+        .message-container {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1050;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            min-width: 250px;
+            text-align: center;
+        }
+        .message-container.success { background-color: #28a745; }
+        .message-container.error { background-color: #dc3545; }
+        .message-container.warning { background-color: #ffc107; color: #212529; }
+        .message-container.info { background-color: #17a2b8; }
+        .message-container.show { opacity: 1; }
+
+        /* Style for the map container */
+        #map {
+            height: 600px; /* Give it a good height */
+            width: 100%;  /* Full width */
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    {# Message container #}
+    <div id="message-popup" class="message-container">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <h1>Mark Dangerous Areas on Map</h1>
+
+    {# Map Container Div #}
+    <div id="map"></div>
+
+    {# Optional: Keep the table view below the map if desired #}
+    {% comment %}
+    <h2>Dangerous Spots List</h2>
+    <table border="1">
+         <tr>
+            <td colspan="2"><div align="center"><a href="/admin_add_dangerous_spot/">Add new </a></div></td> {# This link is for the old form #}
+        </tr>
+        <tr>
+            <th>Sno</th>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Geometry Type</th> {# Display geometry type instead of lat/lng #}
+             <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+        {% for spot in dangerous_spots_list %} {# Using the optional list from context #}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ spot.name }}</td>
+            <td>{{ spot.date }}</td>
+            <td>{{ spot.geometry.geom_type }}</td> {# Display the type (e.g., Polygon) #}
+             <td><a href= "{% url 'admin_edit_dangerous_spot' spot.id %}"}>Edit</a></td> {# Update link or remove #}
+            <td><a href= "{% url 'admin_delete_dangerous_spot' spot.id %}"onclick="return confirm('Are you sure you want to delete this spot?');"}>Delete</a></td> {# Update link or remove #}
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">No dangerous spots found.</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endcomment %}
+
+
+    {# Include Leaflet JavaScript #}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+       crossorigin=""></script>
+
+    {# Include Leaflet Draw JavaScript #}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    {# Include Django's CSRF token for AJAX POST requests #}
+    {% csrf_token %}
+
+    <script>
+        // Existing message fading script (keep if needed)
+        document.addEventListener('DOMContentLoaded', function() {
+            const messagePopup = document.getElementById('message-popup');
+            const messagesList = messagePopup.querySelector('.messages');
+
+            if (messagesList && messagesList.children.length > 0) {
+                 const firstMessage = messagesList.querySelector('li');
+                 if (firstMessage && firstMessage.classList.length > 0) {
+                      messagePopup.classList.add(firstMessage.classList[0]);
+                 }
+                messagePopup.classList.add('show');
+                setTimeout(function() {
+                    messagePopup.classList.remove('show');
+                     setTimeout(function() {
+                         messagePopup.remove();
+                     }, 500);
+                }, 3000);
+            } else {
+                messagePopup.remove();
+            }
+        });
+
+        // --- Leaflet Map and Draw Script ---
+
+        // Initialize the map
+        // Set the initial view (adjust center and zoom as needed)
+        const map = L.map('map').setView([20.5937, 78.9629], 5);
+
+        // Add a tile layer (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Feature group to store drawn layers
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        // Initialize the draw control
+        const drawControl = new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems, // Layers in this group can be edited/deleted
+                remove: true
+            },
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    shapeOptions: {
+                        color: '#ff0000' // Red color for polygons
+                    },
+                    showArea: true // Show area while drawing polygons
+                },
+                rectangle: {
+                    shapeOptions: {
+                         color: '#ff0000' // Red color for rectangles
+                    }
+                },
+                circle: {
+                    shapeOptions: {
+                         color: '#ff0000' // Red color for circles
+                    },
+                     showRadius: true // Show radius while drawing circles
+                },
+                marker: false, // Disable marker drawing if not needed
+                polyline: false // Disable polyline drawing if not needed
+            }
+        });
+        map.addControl(drawControl);
+
+        // --- Handle Drawing Events ---
+
+        map.on(L.Draw.Event.CREATED, function (event) {
+            const layer = event.layer;
+            const type = event.layerType;
+
+            // Get GeoJSON representation of the drawn layer's geometry
+            const geojsonGeometry = layer.toGeoJSON().geometry;
+
+            console.log("Drawn Shape Type:", type);
+            console.log("Drawn GeoJSON Geometry:", geojsonGeometry);
+
+            // --- Prompt User for Name and Date ---
+            // This is a basic prompt. For better UI, use a modal or form outside the map.
+            const spotName = prompt("Enter a name for this dangerous area:");
+            if (!spotName) {
+                alert("Dangerous area needs a name. Drawing cancelled.");
+                // Don't add the layer to drawnItems if cancelled
+                return;
+            }
+
+            // Get today's date in YYYY-MM-DD format for prompt default
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            const defaultDate = `${yyyy}-${mm}-${dd}`;
+
+            const spotDate = prompt(`Enter the date for this area (${defaultDate}):`, defaultDate);
+             if (!spotDate) {
+                alert("Dangerous area needs a date. Drawing cancelled.");
+                return;
+            }
+
+            // --- Send data to backend via AJAX ---
+
+            // Get CSRF token from the template
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const postData = {
+                name: spotName,
+                date: spotDate,
+                geometry: geojsonGeometry // Send the GeoJSON geometry object
+            };
+
+            console.log("Sending data to backend:", postData);
+
+            fetch("{% url 'admin_add_dangerous_area_ajax' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest', // Indicate it's an AJAX request
+                    'X-CSRFToken': csrfToken // Include the CSRF token
+                },
+                body: JSON.stringify(postData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Handle HTTP errors (e.g., 400, 500)
+                    return response.json().then(err => { throw new Error(err.error || `HTTP error! status: ${response.status}`); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Backend response:', data);
+                if (data.success) {
+                    alert('Dangerous area added successfully!');
+                    // Add the layer to the map's feature group so it persists visually
+                    drawnItems.addLayer(layer);
+                    // Optional: Attach the backend ID to the layer if you plan to implement edit/delete
+                    layer.feature = layer.feature || {}; // Ensure feature object exists
+                    layer.feature.properties = layer.feature.properties || {}; // Ensure properties object exists
+                    layer.feature.properties.id = data.id;
+
+                    // Update popup content to include name and date
+                    layer.bindPopup(`<b>${spotName}</b><br>Date: ${spotDate}`);
+
+                } else {
+                    alert('Error saving dangerous area: ' + data.error);
+                    // Do not add the layer to drawnItems if saving failed
+                    // User might want to redraw or try again
+                }
+            })
+            .catch((error) => {
+                console.error('Error sending data:', error);
+                alert('An error occurred while saving the dangerous area.');
+                 // Do not add the layer to drawnItems if saving failed
+            });
+
+        });
+
+        // --- Handle Edit and Delete Events (Implement backend AJAX for these later) ---
+
+        map.on(L.Draw.Event.EDITED, function (event) {
+            const layers = event.layers;
+            layers.eachLayer(function (layer) {
+                 const geojson = layer.toGeoJSON();
+                 console.log("Edited Shape GeoJSON:", geojson);
+                 // TODO: Implement AJAX POST to backend to update spot with ID layer.feature.properties.id
+                 // dataToSend = { id: layer.feature.properties.id, geometry: geojson.geometry, name: layer.feature.properties.name, date: layer.feature.properties.date }
+            });
+             alert('Edited layers. (Saving not implemented yet)'); // Placeholder message
+        });
+
+        map.on(L.Draw.Event.DELETED, function (event) {
+            const layers = event.layers;
+             layers.eachLayer(function (layer) {
+                 console.log("Deleted Shape ID:", layer.feature.properties.id);
+                 // TODO: Implement AJAX POST/DELETE to backend to delete spot with ID layer.feature.properties.id
+            });
+             alert('Deleted layers. (Saving not implemented yet)'); // Placeholder message
+        });
+
+        // --- Load Existing Dangerous Areas from Backend ---
+
+        // Get the GeoJSON data embedded by Django
+        // dangerousSpotsGeoJSONData will be a JavaScript array of GeoJSON Feature objects
+        const dangerousSpotsGeoJSONData = JSON.parse('{{ dangerous_spots_geojson | escapejs | safe }}');
+        console.log("Loaded existing dangerous spots GeoJSON:", dangerousSpotsGeoJSONData);
+
+
+        // Add existing GeoJSON features to the map
+        L.geoJSON(dangerousSpotsGeoJSONData, {
+            style: function(feature) {
+                // Style based on feature properties or use a default red
+                return {
+                    color: '#ff0000', // Red outline
+                    weight: 3,
+                    opacity: 0.7,
+                    fillColor: '#ff0000', // Red fill
+                    fillOpacity: 0.3
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                // Bind popup with data from properties
+                let popupContent = `<b>${feature.properties.name}</b><br>Date: ${feature.properties.date}`;
+                layer.bindPopup(popupContent);
+
+                // Attach properties (including ID) to the layer for potential edit/delete
+                 layer.feature = feature;
+            }
+        }).addTo(drawnItems); // Add existing areas to the same feature group as drawn ones
+
+
+    </script>
+
+</body>
+</html>
